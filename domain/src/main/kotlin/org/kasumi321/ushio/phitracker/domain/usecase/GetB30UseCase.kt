@@ -22,10 +22,10 @@ class GetB30UseCase @Inject constructor(
     operator fun invoke(
         difficulties: Map<String, Map<Difficulty, Float>>,
         songNames: Map<String, String>
-    ): Flow<List<BestRecord>> {
+    ): Flow<Pair<List<BestRecord>, List<BestRecord>>> {
         return repository.getCachedSave().map { save ->
-            if (save == null) return@map emptyList()
-            RksCalculator.getB30(save.gameRecord, difficulties, songNames)
+            if (save == null) return@map Pair(emptyList(), emptyList())
+            RksCalculator.getB30AndAllRecords(save.gameRecord, difficulties, songNames)
         }
     }
 }

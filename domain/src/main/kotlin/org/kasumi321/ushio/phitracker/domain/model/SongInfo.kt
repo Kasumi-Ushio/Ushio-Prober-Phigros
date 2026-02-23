@@ -3,6 +3,19 @@ package org.kasumi321.ushio.phitracker.domain.model
 import kotlinx.serialization.Serializable
 
 /**
+ * 谱面音符统计
+ */
+@Serializable
+data class NoteCount(
+    val tap: Int = 0,
+    val drag: Int = 0,
+    val hold: Int = 0,
+    val flick: Int = 0
+) {
+    val total get() = tap + drag + hold + flick
+}
+
+/**
  * 曲目信息
  */
 @Serializable
@@ -11,5 +24,10 @@ data class SongInfo(
     val name: String,
     val composer: String,
     val illustrator: String,
-    val difficulties: Map<Difficulty, Float>
+    val difficulties: Map<Difficulty, Float>,
+    val bpm: String = "",
+    val chapter: String = "",
+    val length: String = "",
+    val charters: Map<Difficulty, String> = emptyMap(),
+    val noteCounts: Map<Difficulty, NoteCount> = emptyMap()
 )

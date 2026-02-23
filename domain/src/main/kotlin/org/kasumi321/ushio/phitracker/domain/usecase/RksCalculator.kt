@@ -64,11 +64,11 @@ object RksCalculator {
      * 返回格式: Phi3 在前 (isPhi=true), B27 在后 (isPhi=false), 各自按 RKS 降序
      * Phi 和 B27 允许重叠 (同一首歌可同时出现在两个列表中)
      */
-    fun getB30(
+    fun getB30AndAllRecords(
         records: Map<String, SongRecord>,
         difficulties: Map<String, Map<Difficulty, Float>>,
         songNames: Map<String, String>
-    ): List<BestRecord> {
+    ): Pair<List<BestRecord>, List<BestRecord>> {
         val allRecords = mutableListOf<BestRecord>()
 
         for ((songId, songRecord) in records) {
@@ -108,7 +108,8 @@ object RksCalculator {
             .take(36)
 
         // 合并: Phi3 在前, B36 在后
-        return phi3 + b36
+        val b30List = phi3 + b36
+        return Pair(b30List, allRecords)
     }
 
     /**

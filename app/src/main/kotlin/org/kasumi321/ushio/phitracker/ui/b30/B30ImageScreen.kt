@@ -44,6 +44,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import org.kasumi321.ushio.phitracker.domain.model.BestRecord
+import org.kasumi321.ushio.phitracker.utils.ImageStorageHelper
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -128,7 +129,7 @@ fun B30ImageScreen(
                     ) {
                         Button(
                             onClick = {
-                                val path = B30ImageGenerator.saveToPictures(context, bmp)
+                                val path = ImageStorageHelper.saveToPictures(context, bmp, "B30_${System.currentTimeMillis()}.png")
                                 if (path != null) {
                                     Toast.makeText(context, "已保存到 Pictures/PhiTracker", Toast.LENGTH_SHORT).show()
                                 } else {
@@ -143,7 +144,7 @@ fun B30ImageScreen(
 
                         OutlinedButton(
                             onClick = {
-                                val path = B30ImageGenerator.saveToPictures(context, bmp)
+                                val path = ImageStorageHelper.saveToPictures(context, bmp, "B30_${System.currentTimeMillis()}.png")
                                 if (path != null) {
                                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
                                         type = "image/png"

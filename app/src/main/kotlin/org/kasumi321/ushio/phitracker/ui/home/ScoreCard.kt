@@ -1,6 +1,7 @@
 package org.kasumi321.ushio.phitracker.ui.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,6 +54,7 @@ fun ScoreCard(
     rank: Int,
     record: BestRecord,
     illustrationUrl: String?,
+    onSongClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val diffColor = DifficultyColors.forDifficulty(record.difficulty)
@@ -78,7 +80,8 @@ fun ScoreCard(
     }
 
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth()
+            .clickable { onSongClick(record.songId) },
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         )

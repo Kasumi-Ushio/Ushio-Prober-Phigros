@@ -44,6 +44,7 @@ fun B30Tab(
     onRefresh: () -> Unit,
     onGenerateImage: () -> Unit,
     getIllustrationUrl: (String) -> String?,
+    onSongClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     // 分离 Phi3, B27 和 Overflow
@@ -171,7 +172,8 @@ fun B30Tab(
                         ScoreCard(
                             rank = index + 1,
                             record = record,
-                            illustrationUrl = getIllustrationUrl(record.songId)
+                            illustrationUrl = getIllustrationUrl(record.songId),
+                            onSongClick = onSongClick
                         )
                     }
                 }
@@ -194,7 +196,8 @@ fun B30Tab(
                     ScoreCard(
                         rank = index + 1,
                         record = record,
-                        illustrationUrl = getIllustrationUrl(record.songId)
+                        illustrationUrl = getIllustrationUrl(record.songId),
+                        onSongClick = onSongClick
                     )
                 }
 
@@ -217,7 +220,8 @@ fun B30Tab(
                         ScoreCard(
                             rank = index + 1, // 不跟随 B27 的排名序号
                             record = record,
-                            illustrationUrl = getIllustrationUrl(record.songId)
+                            illustrationUrl = getIllustrationUrl(record.songId),
+                            onSongClick = onSongClick
                         )
                     }
                 }

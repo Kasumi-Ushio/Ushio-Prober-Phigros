@@ -52,6 +52,7 @@ data class BottomNavItem(
 fun MainScreen(
     onLogout: () -> Unit,
     onNavigateToB30Image: () -> Unit,
+    onNavigateToSongDetail: (String) -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -167,6 +168,7 @@ fun MainScreen(
                 onRefresh = { viewModel.refresh() },
                 onGenerateImage = onNavigateToB30Image,
                 getIllustrationUrl = { viewModel.getIllustrationUrl(it) },
+                onSongClick = onNavigateToSongDetail,
                 modifier = Modifier.padding(innerPadding)
             )
             1 -> SongsTab(
@@ -174,6 +176,7 @@ fun MainScreen(
                 searchQuery = state.searchQuery,
                 onSearchChange = { viewModel.searchSongs(it) },
                 getIllustrationUrl = { viewModel.getIllustrationUrl(it) },
+                onSongClick = onNavigateToSongDetail,
                 modifier = Modifier.padding(innerPadding)
             )
             2 -> SettingsTab(

@@ -4,18 +4,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import org.kasumi321.ushio.phitracker.ui.b30.B30ImageScreen
 import org.kasumi321.ushio.phitracker.ui.home.HomeViewModel
 import org.kasumi321.ushio.phitracker.ui.home.MainScreen
 import org.kasumi321.ushio.phitracker.ui.login.LoginScreen
+import org.kasumi321.ushio.phitracker.ui.song.SongDetailScreen
 
 sealed class Screen(val route: String) {
     data object Login : Screen("login")
     data object Home : Screen("home")
     data object B30Image : Screen("b30image")
+    data object SongDetail : Screen("song_detail/{songId}") {
+        fun createRoute(songId: String) = "song_detail/$songId"
+    }
 }
 
 @Composable
@@ -44,6 +50,9 @@ fun PhiTrackerNavHost() {
                 },
                 onNavigateToB30Image = {
                     navController.navigate(Screen.B30Image.route)
+                },
+                onNavigateToSongDetail = { songId ->
+                    navController.navigate(Screen.SongDetail.createRoute(songId))
                 }
             )
         }
@@ -59,6 +68,29 @@ fun PhiTrackerNavHost() {
                 nickname = state.nickname,
                 onBack = { navController.popBackStack() }
             )
+        }
+        composable(
+            route = Screen.SongDetail.route,
+            arguments = listOf(navArgument("songId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val songId = backStackEntry.arguments?.getString("songId") ?: return@composable
+
+            val parentEntry = navController.getBackStackEntry(Screen.Home.route)
+            val viewModel: HomeViewModel = hiltViewModel(parentEntry)
+            val state by viewModel.uiState.collectAsState()
+
+            val songInfo = state.allSongs.find { it.id == songId }
+            val userRecords = state.allRecords.filter { it.songId == songId }
+            
+            if (songInfo != null) {
+                SongDetailScreen(
+                    songInfo = songInfo,
+                    userRecords = userRecords,
+                    getIllustrationUrl = { viewModel.getIllustrationUrl(it) },
+                    getStandardIllustrationUrl = { viewModel.getStandardIllustrationUrl(it) },
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
     }
 }

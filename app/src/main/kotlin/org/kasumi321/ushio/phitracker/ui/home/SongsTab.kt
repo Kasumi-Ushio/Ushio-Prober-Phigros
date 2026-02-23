@@ -1,6 +1,7 @@
 package org.kasumi321.ushio.phitracker.ui.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -50,6 +51,7 @@ fun SongsTab(
     searchQuery: String,
     onSearchChange: (String) -> Unit,
     getIllustrationUrl: (String) -> String?,
+    onSongClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxSize()) {
@@ -80,7 +82,11 @@ fun SongsTab(
                 key = { it.id },
                 contentType = { "song_item" }
             ) { song ->
-                SongItem(song = song, illustrationUrl = getIllustrationUrl(song.id))
+                SongItem(
+                    song = song,
+                    illustrationUrl = getIllustrationUrl(song.id),
+                    onSongClick = onSongClick
+                )
             }
         }
     }
@@ -90,6 +96,7 @@ fun SongsTab(
 fun SongItem(
     song: SongInfo,
     illustrationUrl: String?,
+    onSongClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -104,7 +111,8 @@ fun SongItem(
     }
 
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth()
+            .clickable { onSongClick(song.id) },
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         )

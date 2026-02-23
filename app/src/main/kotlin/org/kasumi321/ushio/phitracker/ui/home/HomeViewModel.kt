@@ -37,10 +37,10 @@ data class HomeUiState(
     val isSyncing: Boolean = false,
     val error: String? = null,
     val isLoggedOut: Boolean = false,
-    // Songs tab
     val searchQuery: String = "",
     val filteredSongs: List<SongInfo> = emptyList(),
     val allSongs: List<SongInfo> = emptyList(),
+    val allRecords: List<BestRecord> = emptyList(),
     // 曲绘预加载 — 阻塞式流程
     val illustrationReady: Boolean = false,   // true = 用户已处理预加载 (下载完/跳过), 可以显示内容
     val showPreloadDialog: Boolean = false,
@@ -93,12 +93,13 @@ class HomeViewModel @Inject constructor(
             val nameMap = songDataProvider.getSongNameMap()
 
             getB30UseCase(diffMap, nameMap)
-                .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
-                .collect { b30 ->
+                .stateIn(viewModelScope, SharingStarted.Eagerly, Pair(emptyList(), emptyList()))
+                .collect { (b30, allRecords) ->
                     val computedRks = RksCalculator.calculateDisplayRks(b30)
                     _uiState.update {
                         it.copy(
                             b30 = b30,
+                            allRecords = allRecords,
                             displayRks = if (it.displayRks == 0f) computedRks else it.displayRks,
                             isLoading = false
                         )
@@ -237,6 +238,10 @@ class HomeViewModel @Inject constructor(
 
     fun getIllustrationUrl(songId: String): String {
         return illustrationProvider.getLowUrl(songId)
+    }
+
+    fun getStandardIllustrationUrl(songId: String): String {
+        return illustrationProvider.getStandardUrl(songId)
     }
 
     fun logout() {

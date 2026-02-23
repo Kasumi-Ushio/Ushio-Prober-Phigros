@@ -46,6 +46,10 @@ fun B30Tab(
     getIllustrationUrl: (String) -> String?,
     modifier: Modifier = Modifier
 ) {
+    // 分离 Phi3 和 B27
+    val phi3 = b30.filter { it.isPhi }
+    val b27 = b30.filter { !it.isPhi }
+
     Column(modifier = modifier.fillMaxSize()) {
         TopAppBar(
             title = { Text("Best 30") },
@@ -100,20 +104,22 @@ fun B30Tab(
 
                 if (b30.isNotEmpty()) {
                     Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = "Best φ",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Text(
-                            text = String.format("%.4f", b30.first().rks),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        if (b30.size >= 20) {
+                        if (phi3.isNotEmpty()) {
                             Text(
-                                text = "B19 末位: ${String.format("%.4f", b30[19].rks)}",
+                                text = "Best φ",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Text(
+                                text = String.format("%.4f", phi3.first().rks),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                        if (b27.size >= 27) {
+                            Text(
+                                text = "B27 末位: ${String.format("%.4f", b27.last().rks)}",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                             )
@@ -144,7 +150,45 @@ fun B30Tab(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                itemsIndexed(b30) { index, record ->
+                // Phi3 section
+                if (phi3.isNotEmpty()) {
+                    item(contentType = "header") {
+                        Text(
+                            text = "φ Best (AP)",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(vertical = 4.dp)
+                        )
+                    }
+                    itemsIndexed(
+                        phi3,
+                        key = { _, r -> "phi_${r.songId}_${r.difficulty}" },
+                        contentType = { _, _ -> "score_card" }
+                    ) { index, record ->
+                        ScoreCard(
+                            rank = index + 1,
+                            record = record,
+                            illustrationUrl = getIllustrationUrl(record.songId)
+                        )
+                    }
+                }
+
+                // B27 section
+                item(contentType = "header") {
+                    Text(
+                        text = "Best 27",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                    )
+                }
+                itemsIndexed(
+                    b27,
+                    key = { _, r -> "b27_${r.songId}_${r.difficulty}" },
+                    contentType = { _, _ -> "score_card" }
+                ) { index, record ->
                     ScoreCard(
                         rank = index + 1,
                         record = record,

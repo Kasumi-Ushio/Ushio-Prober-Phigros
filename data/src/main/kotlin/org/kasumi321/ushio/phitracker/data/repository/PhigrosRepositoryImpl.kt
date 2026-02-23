@@ -24,6 +24,7 @@ import org.kasumi321.ushio.phitracker.domain.repository.PhigrosRepository
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
+import timber.log.Timber
 
 @Singleton
 class PhigrosRepositoryImpl @Inject constructor(
@@ -64,6 +65,7 @@ class PhigrosRepositoryImpl @Inject constructor(
             val saveList = apiClient.getGameSaves(sessionToken, server)
             val latestSave = saveList.results.firstOrNull()
                 ?: throw IllegalStateException("没有找到存档")
+            Timber.d("Found %d saves, using latest", saveList.results.size)
 
             // 2. 解析 Summary
             val summary = saveParser.parseSummary(latestSave.summary)
@@ -96,6 +98,8 @@ class PhigrosRepositoryImpl @Inject constructor(
             val recordEntities = save.toRecordEntities(now)
             recordDao.deleteAll()
             recordDao.insertAll(recordEntities)
+            Timber.i("Sync complete: %d records saved, rks=%.4f, nickname=%s",
+                recordEntities.size, summary.rks, userInfo.nickname)
 
             save
         }
@@ -139,6 +143,12 @@ class PhigrosRepositoryImpl @Inject constructor(
                 ),
                 summary = null
             )
+        }
+    }
+
+    override fun getUserProfile(): Flow<UserProfile?> {
+        return userDao.getUser().map { entity ->
+            entity?.toUserProfile()
         }
     }
 

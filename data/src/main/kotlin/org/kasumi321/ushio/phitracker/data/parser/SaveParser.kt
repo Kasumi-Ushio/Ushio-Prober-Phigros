@@ -85,7 +85,7 @@ class SaveParser @Inject constructor(
      * 格式 (C 库中 deserializationMap 的 end=2 模式):
      * - varshort: 曲目数量
      * - 每首曲目:
-     *   - string (trim 2 bytes): songId (结尾的 ".0" 被截掉)
+     *   - string: songId (包含 ".0" 后缀, 如 "Glaciaxion.SunsetRay.0")
      *   - byte: 该曲目数据总长度
      *   - byte: 难度 bitmask (bit 0-3 分别表示 EZ/HD/IN/AT 是否有记录)
      *   - byte: FC bitmask (bit 0-3 分别表示 EZ/HD/IN/AT 是否满 combo)
@@ -99,7 +99,7 @@ class SaveParser @Inject constructor(
         val records = mutableMapOf<String, SongRecord>()
 
         for (i in 0 until songCount) {
-            val songId = reader.readStringTrimEnd(2)
+            val songId = reader.readString()
             val dataLength = reader.readByte()
             val startPos = reader.position
 

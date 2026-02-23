@@ -62,6 +62,9 @@ dependencies {
     // Compression
     implementation(libs.zip4j)
 
+    // Logging
+    implementation(libs.timber)
+
     // Testing
     testImplementation(libs.junit)
 }

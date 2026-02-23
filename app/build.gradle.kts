@@ -8,6 +8,13 @@ plugins {
     alias(libs.plugins.aboutlibraries)
 }
 
+import java.util.Properties
+
+val localProps = Properties()
+rootProject.file("local.properties").let { f ->
+    if (f.exists()) localProps.load(f.inputStream())
+}
+
 android {
     namespace = "org.kasumi321.ushio.phitracker"
     compileSdk = libs.versions.compileSdk.get().toInt()
@@ -22,9 +29,24 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = rootProject.file("release.keystore")
+            storePassword = localProps["RELEASE_STORE_PASSWORD"] as? String ?: ""
+            keyAlias = "phitracker"
+            keyPassword = localProps["RELEASE_KEY_PASSWORD"] as? String ?: ""
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
         debug {
             applicationIdSuffix = ".debug"
@@ -79,6 +101,9 @@ dependencies {
 
     // Image
     implementation(libs.coil.compose)
+
+    // Logging
+    implementation(libs.timber)
 
     // License
     implementation(libs.aboutlibraries.core)

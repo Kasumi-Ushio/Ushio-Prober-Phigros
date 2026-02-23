@@ -23,7 +23,7 @@ class IllustrationProvider @Inject constructor() {
 
     companion object {
         private const val DEFAULT_BASE_URL =
-            "https://raw.githubusercontent.com/Catrong/phi-plugin-ill/main"
+            "https://gh-proxy.com/https://raw.githubusercontent.com/Catrong/phi-plugin-ill/main"
     }
 
     private var baseUrl: String = DEFAULT_BASE_URL

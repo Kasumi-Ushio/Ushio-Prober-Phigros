@@ -27,15 +27,18 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import org.kasumi321.ushio.phitracker.domain.model.Difficulty
 import org.kasumi321.ushio.phitracker.domain.model.SongInfo
 import org.kasumi321.ushio.phitracker.ui.theme.DifficultyColors
@@ -72,7 +75,11 @@ fun SongsTab(
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            items(songs, key = { it.id }) { song ->
+            items(
+                songs,
+                key = { it.id },
+                contentType = { "song_item" }
+            ) { song ->
                 SongItem(song = song, illustrationUrl = getIllustrationUrl(song.id))
             }
         }
@@ -85,6 +92,17 @@ fun SongItem(
     illustrationUrl: String?,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val imageRequest = remember(illustrationUrl) {
+        illustrationUrl?.let {
+            ImageRequest.Builder(context)
+                .data(it)
+                .size(168)
+                .crossfade(200)
+                .build()
+        }
+    }
+
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -98,10 +116,10 @@ fun SongItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // 曲绘缩略图
-            if (illustrationUrl != null) {
+            if (imageRequest != null) {
                 AsyncImage(
-                    model = illustrationUrl,
-                    contentDescription = song.name,
+                    model = imageRequest,
+                    contentDescription = null,
                     modifier = Modifier
                         .size(56.dp)
                         .clip(RoundedCornerShape(8.dp)),
@@ -133,9 +151,12 @@ fun SongItem(
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    val orderedDiffs = listOf(Difficulty.EZ, Difficulty.HD, Difficulty.IN, Difficulty.AT)
+                    val orderedDiffs = remember { listOf(Difficulty.EZ, Difficulty.HD, Difficulty.IN, Difficulty.AT) }
                     for (diff in orderedDiffs) {
                         val cc = song.difficulties[diff] ?: continue
+                        val ccText = remember(cc) {
+                            "${DifficultyColors.labelFor(diff)} ${String.format("%.1f", cc)}"
+                        }
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(4.dp))
@@ -143,7 +164,7 @@ fun SongItem(
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
                             Text(
-                                text = "${DifficultyColors.labelFor(diff)} ${String.format("%.1f", cc)}",
+                                text = ccText,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.surface,
                                 fontWeight = FontWeight.Bold,

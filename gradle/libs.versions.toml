@@ -30,6 +30,9 @@ room = "2.6.1"
 # Image
 coil = "2.7.0"
 
+# Logging
+timber = "5.0.1"
+
 # Security
 securityCrypto = "1.1.0-alpha06"
 
@@ -83,6 +86,9 @@ androidx-room-compiler = { group = "androidx.room", name = "room-compiler", vers
 
 # Image
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+
+# Logging
+timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 
 # Security
 androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }

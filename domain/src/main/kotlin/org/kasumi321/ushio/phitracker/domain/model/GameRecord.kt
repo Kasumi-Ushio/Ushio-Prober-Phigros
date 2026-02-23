@@ -43,5 +43,6 @@ data class BestRecord(
     val accuracy: Float,
     val isFullCombo: Boolean,
     val chartConstant: Float,
-    val rks: Float
+    val rks: Float,
+    val isPhi: Boolean = false
 )

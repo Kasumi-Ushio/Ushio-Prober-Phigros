@@ -35,6 +35,8 @@ android {
             storePassword = localProps["RELEASE_STORE_PASSWORD"] as? String ?: ""
             keyAlias = "phitracker"
             keyPassword = localProps["RELEASE_KEY_PASSWORD"] as? String ?: ""
+            enableV1Signing = true
+            enableV2Signing = true
         }
     }
 

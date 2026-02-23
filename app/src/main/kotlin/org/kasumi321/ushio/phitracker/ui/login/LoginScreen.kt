@@ -59,6 +59,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.kasumi321.ushio.phitracker.domain.model.Server
@@ -111,22 +112,23 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(36.dp))
 
             // 标题
             Text(
-                text = "Phigros\nScore Tracker",
+                text = "Phi Tracker",
                 style = MaterialTheme.typography.headlineLarge,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.primary
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "by Ushio",
+                text = "A Phigros Score Tracker\nDeveloped by 铃萤-RinLin a.k.a. 朝比奈ほたる\nCopyright © 2026 Kasumi's IT Infrastructure",
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -220,7 +222,7 @@ private fun QrLoginContent(
         when (state.qrStatus) {
             QrStatus.Idle -> {
                 Text(
-                    text = "使用 TapTap App 扫描二维码\n快速安全地登录",
+                    text = "使用 TapTap App 扫描二维码\n无需手动抓取 sessionToken，登录将自动完成",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -259,7 +261,7 @@ private fun QrLoginContent(
 
                 // 状态文字
                 val statusText = if (state.qrStatus == QrStatus.Scanned) {
-                    "✅ 已扫描，请在 TapTap 上确认登录"
+                    "已扫描，请在 TapTap 上确认登录"
                 } else {
                     "请使用 TapTap App 扫描二维码"
                 }
@@ -293,7 +295,7 @@ private fun QrLoginContent(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "⚠️ 请注意，登录 TapTap 可能造成账号及财产损失，\n请在信任来源的情况下扫码登录",
+                    text = "请注意，登录 TapTap 可能造成账号及财产损失\n请在信任来源的情况下扫码登录",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -353,7 +355,7 @@ private fun QrLoginContent(
             QrStatus.Expired -> {
                 Spacer(modifier = Modifier.height(32.dp))
                 Text(
-                    text = "⏰ 二维码已过期",
+                    text = "二维码已过期",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.error
                 )
@@ -414,8 +416,24 @@ private fun TokenLoginContent(
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        val annotatedString = androidx.compose.ui.text.buildAnnotatedString {
+            append("请输入 TapTap 的 sessionToken\n")
+            append("不知道如何获取 sessionToken？")
+            val link = androidx.compose.ui.text.LinkAnnotation.Url(
+                url = "https://www.kdocs.cn/l/cvMDjWPTNaz4",
+                styles = androidx.compose.ui.text.TextLinkStyles(
+                    style = androidx.compose.ui.text.SpanStyle(
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                )
+            )
+            pushLink(link)
+            append("点我获取教程")
+            pop()
+        }
+
         Text(
-            text = "请输入 TapTap 的 Session Token\n可通过抓包或浏览器开发者工具获取",
+            text = annotatedString,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center

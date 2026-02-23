@@ -54,7 +54,7 @@ class LoginViewModel @Inject constructor(
     }
 
     fun updateToken(token: String) {
-        _uiState.update { it.copy(token = token, error = null) }
+        _uiState.update { it.copy(token = token.trim(), error = null) }
     }
 
     fun updateServer(server: Server) {

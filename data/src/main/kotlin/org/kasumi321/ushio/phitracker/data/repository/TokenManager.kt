@@ -31,7 +31,7 @@ class TokenManager @Inject constructor(
 
     fun saveToken(token: String, server: Server) {
         prefs.edit()
-            .putString(KEY_SESSION_TOKEN, token)
+            .putString(KEY_SESSION_TOKEN, token.trim())
             .putString(KEY_SERVER, server.name)
             .apply()
     }

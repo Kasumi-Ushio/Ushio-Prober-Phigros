@@ -12,8 +12,8 @@ import javax.inject.Singleton
  *
  * 从 assets 中加载 difficulty.tsv 和 info.tsv (来自 PhigrosLibrary)
  *
- * difficulty.tsv 格式: songId\tEZ\tHD\tIN[\tAT]
- * info.tsv 格式: songId\tname\tcomposer\tillustrator\t[chartDesigners...]
+ * difficulty.tsv 格式: songId, EZ, HD, IN, (AT)
+ * info.tsv 格式: songId, name, composer, illustrator, (chartDesigners...)
  */
 @Singleton
 class SongDataProvider @Inject constructor(

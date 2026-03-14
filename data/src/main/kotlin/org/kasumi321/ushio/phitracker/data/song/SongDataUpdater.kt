@@ -20,7 +20,8 @@ class SongDataUpdater @Inject constructor(
 ) {
 
     companion object {
-        private const val BASE_URL = "https://raw.githubusercontent.com/Catrong/phi-plugin/refs/heads/main/resources/info/"
+        // 为应对网络限制和 Gitee 防盗链/鉴权系统，使用 GitHub + gh-proxy
+        private const val BASE_URL = "https://gh-proxy.com/https://raw.githubusercontent.com/Catrong/phi-plugin/main/resources/info/"
         private val FILES = listOf(
             "difficulty.csv",
             "info.csv",
@@ -29,7 +30,7 @@ class SongDataUpdater @Inject constructor(
         )
     }
 
-    suspend fun updateSongData(onProgress: (Int, Int) -> Unit): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun updateSongData(onProgress: (Int, Int, String) -> Unit): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             val targetDir = File(context.filesDir, "song_data")
             if (!targetDir.exists()) {
@@ -38,7 +39,7 @@ class SongDataUpdater @Inject constructor(
 
             var currentIndex = 0
             for (filename in FILES) {
-                onProgress(currentIndex, FILES.size)
+                onProgress(currentIndex, FILES.size, filename)
                 val response = httpClient.get("$BASE_URL$filename")
                 val channel = response.bodyAsChannel()
                 
@@ -53,7 +54,7 @@ class SongDataUpdater @Inject constructor(
                 tempFile.renameTo(targetFile)
                 currentIndex++
             }
-            onProgress(FILES.size, FILES.size)
+            onProgress(FILES.size, FILES.size, "完成")
             
             // Invalidate cache
             songDataProvider.invalidateCache()

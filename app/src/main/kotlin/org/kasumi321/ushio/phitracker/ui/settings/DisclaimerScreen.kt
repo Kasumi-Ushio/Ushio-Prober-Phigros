@@ -54,10 +54,10 @@ fun DisclaimerScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
             SectionTitle("版权")
-            SectionText("版权所有 (c) 2026 Kasumi's IT Infrastructure。\n\n版权所有 (c) 2026 铃萤-RinLin a.k.a. 朝比奈ほたる 及所有 Phi Tracker 贡献者。")
+            SectionText("版权所有 (c) 2026 Kasumi's IT Infrastructure。\n版权所有 (c) 2026 铃萤-RinLin a.k.a. 朝比奈ほたる 及所有 Phi Tracker 贡献者。")
 
-            SectionTitle("本项目许可协议")
-            SectionText("本项目的全部源代码、不属于 Pigeon Games 和 TapTap 的资产以及文档，均为自由软件。\n\n您可以根据 GNU General Public License 版本 3 的条款，使用、复制、分发、修改和重新分发本项目。")
+            SectionTitle("许可协议")
+            SectionText("本项目的全部源代码、不属于 Pigeon Games 和 TapTap 的资产以及文档，均为自由软件。\n您可以根据 GNU General Public License 版本 3 或更高版本的条款，使用、复制、分发、修改和重新分发本项目。")
             
             Spacer(modifier = Modifier.height(24.dp))
             Text(
@@ -69,7 +69,7 @@ fun DisclaimerScreen(
             Spacer(modifier = Modifier.height(16.dp))
             SectionText("本项目是一个非官方项目，与 Pigeon Games 和 TapTap 之间没有任何关联，也不以任何形式受其认可或支持。用户在使用过程中导入的所有资源均为其各自所有者的财产，我们不主张也不拥有这些资源的任何权利。")
             
-            SectionText("尽管本项目是自由软件，并依据 GNU 通用公共许可证的版本 3 允许商业使用，但我们不鼓励、不支持任何形式的商业用途。任何因商业用途而产生的反馈、问题或争议，我们概不负责。")
+            SectionText("尽管本项目是自由软件，并依据 GNU 通用公共许可证的版本 3 或更高版本允许商业使用，但我们不鼓励、不支持任何形式的商业用途。任何因商业用途而产生的反馈、问题或争议，我们概不负责。")
 
             Text(
                 text = "我们不支持，且法律明确禁止任何形式的对 TapTap 和/或 Pigeon Games 的网络攻击或其他非法行为。使用本项目进行此类活动所产生的任何法律风险由用户自行承担。绝对禁止将本项目用于在用户所在国家或地区的刑法所禁止的任何形式的非法活动。",

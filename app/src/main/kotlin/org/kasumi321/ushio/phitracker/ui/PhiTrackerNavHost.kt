@@ -3,8 +3,6 @@ package org.kasumi321.ushio.phitracker.ui
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -44,28 +42,16 @@ fun PhiTrackerNavHost() {
         navController = navController,
         startDestination = Screen.Login.route,
         enterTransition = {
-            slideInHorizontally(
-                initialOffsetX = { it },
-                animationSpec = tween(150)
-            ) + fadeIn(animationSpec = tween(150))
+            fadeIn(animationSpec = tween(150))
         },
         exitTransition = {
-            slideOutHorizontally(
-                targetOffsetX = { -it },
-                animationSpec = tween(150)
-            ) + fadeOut(animationSpec = tween(150))
+            fadeOut(animationSpec = tween(150))
         },
         popEnterTransition = {
-            slideInHorizontally(
-                initialOffsetX = { -it },
-                animationSpec = tween(150)
-            ) + fadeIn(animationSpec = tween(150))
+            fadeIn(animationSpec = tween(150))
         },
         popExitTransition = {
-            slideOutHorizontally(
-                targetOffsetX = { it },
-                animationSpec = tween(150)
-            ) + fadeOut(animationSpec = tween(150))
+            fadeOut(animationSpec = tween(150))
         }
     ) {
         composable(Screen.Login.route) {

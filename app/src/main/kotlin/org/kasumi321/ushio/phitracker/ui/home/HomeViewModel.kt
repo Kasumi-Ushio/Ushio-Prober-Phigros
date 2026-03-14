@@ -82,6 +82,7 @@ data class HomeUiState(
     val isUpdatingData: Boolean = false,
     val updateDataProgress: Int = 0,
     val updateDataTotal: Int = 0,
+    val updateDataFileName: String = "",
     val updateDataError: String? = null
 )
 
@@ -413,9 +414,9 @@ class HomeViewModel @Inject constructor(
     fun updateSongData() {
         if (_uiState.value.isUpdatingData) return
         viewModelScope.launch {
-            _uiState.update { it.copy(isUpdatingData = true, updateDataProgress = 0, updateDataTotal = 4, updateDataError = null) }
-            val result = songDataUpdater.updateSongData { current, total ->
-                _uiState.update { it.copy(updateDataProgress = current, updateDataTotal = total) }
+            _uiState.update { it.copy(isUpdatingData = true, updateDataProgress = 0, updateDataTotal = 4, updateDataFileName = "", updateDataError = null) }
+            val result = songDataUpdater.updateSongData { current, total, fileName ->
+                _uiState.update { it.copy(updateDataProgress = current, updateDataTotal = total, updateDataFileName = fileName) }
             }
             if (result.isSuccess) {
                 _uiState.update { it.copy(isUpdatingData = false) }

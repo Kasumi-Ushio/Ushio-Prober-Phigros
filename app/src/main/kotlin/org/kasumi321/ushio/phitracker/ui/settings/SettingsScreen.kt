@@ -33,6 +33,7 @@ fun SettingsScreen(
         isUpdatingData = state.isUpdatingData,
         updateDataProgress = state.updateDataProgress,
         updateDataTotal = state.updateDataTotal,
+        updateDataFileName = state.updateDataFileName,
         updateDataError = state.updateDataError,
         onUpdateSongData = { viewModel.updateSongData() },
         onDismissUpdateError = { viewModel.dismissUpdateDataError() },

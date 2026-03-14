@@ -11,6 +11,8 @@ import javax.inject.Singleton
  *   ill/{songId}.png      — 标准画质
  *   illLow/{songId}.png   — 低画质 (缩略图推荐)
  *   illBlur/{songId}.png  — 模糊
+ *
+ * 注：由于内地网络环境和 Gitee 的防盗链机制，固定使用 GitHub 配合 gh-proxy 镜像服务。
  */
 @Singleton
 class IllustrationProvider @Inject constructor() {

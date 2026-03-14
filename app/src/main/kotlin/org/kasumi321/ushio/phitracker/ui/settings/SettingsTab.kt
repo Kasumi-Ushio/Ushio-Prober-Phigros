@@ -20,6 +20,8 @@ import androidx.compose.runtime.*
 import org.kasumi321.ushio.phitracker.ui.components.CenteredListItem
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -51,6 +53,7 @@ fun SettingsTab(
     isUpdatingData: Boolean = false,
     updateDataProgress: Int = 0,
     updateDataTotal: Int = 0,
+    updateDataFileName: String = "",
     updateDataError: String? = null,
     onUpdateSongData: () -> Unit = {},
     onDismissUpdateError: () -> Unit = {},
@@ -93,34 +96,38 @@ fun SettingsTab(
         }
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
-        TopAppBar(
-            title = {
-                Column {
-                    Text("设置")
-                    if (tip.isNotBlank()) {
-                        Text(
-                            text = tip,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.fillMaxWidth(0.75f)
-                        )
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text("设置")
+                        if (tip.isNotBlank()) {
+                            Text(
+                                text = tip,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.fillMaxWidth(0.75f)
+                            )
+                        }
+                    }
+                },
+                navigationIcon = {
+                    if (onNavigateBack != null) {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                        }
                     }
                 }
-            },
-            navigationIcon = {
-                if (onNavigateBack != null) {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
-                    }
-                }
-            }
-        )
-
+            )
+        }
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
+                .padding(innerPadding)
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
             CategoryTitle("界面与主题")
@@ -225,8 +232,8 @@ fun SettingsTab(
             )
 
             CenteredListItem(
-                headlineContent = { Text("更新曲目数据 (从远程)") },
-                supportingContent = { Text("下载最新的难度、谱师与音符数信息") },
+                headlineContent = { Text("更新曲目数据") },
+                supportingContent = { Text("下载最新的 Phigros 全曲目信息") },
                 leadingContent = { Icon(Icons.Default.CloudDownload, contentDescription = null) },
                 modifier = Modifier.clickable { showUpdateDataDialog = true }
             )
@@ -372,11 +379,28 @@ fun SettingsTab(
         AlertDialog(
             onDismissRequest = { /* 不允许取消 */ },
             properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
-            title = { Text("正在更新...") },
+            title = { Text("更新曲目数据") },
             text = {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator(modifier = Modifier.padding(16.dp))
-                    Text("下载进度：$updateDataProgress / $updateDataTotal")
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "正在下载: $updateDataFileName ($updateDataProgress/$updateDataTotal)",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    val progress = if (updateDataTotal > 0) updateDataProgress.toFloat() / updateDataTotal else 0f
+                    LinearProgressIndicator(
+                        progress = { progress },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "${(progress * 100).toInt()}%",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             },
             confirmButton = {}

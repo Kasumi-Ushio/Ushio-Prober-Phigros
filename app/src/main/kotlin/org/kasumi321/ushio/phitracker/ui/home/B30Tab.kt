@@ -40,8 +40,6 @@ fun B30Tab(
     displayRks: Float,
     nickname: String,
     challengeModeRank: Int,
-    isSyncing: Boolean,
-    onRefresh: () -> Unit,
     onGenerateImage: () -> Unit,
     getIllustrationUrl: (String) -> String?,
     onSongClick: (String) -> Unit,
@@ -78,14 +76,6 @@ fun B30Tab(
                     enabled = b30.isNotEmpty()
                 ) {
                     Icon(Icons.Filled.Image, contentDescription = "生成图片")
-                }
-                // 刷新按钮
-                IconButton(onClick = onRefresh, enabled = !isSyncing) {
-                    if (isSyncing) {
-                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                    } else {
-                        Icon(Icons.Filled.Refresh, contentDescription = "刷新")
-                    }
                 }
             }
         )

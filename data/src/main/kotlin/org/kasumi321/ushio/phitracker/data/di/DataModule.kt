@@ -16,6 +16,7 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import org.kasumi321.ushio.phitracker.data.database.AppDatabase
 import org.kasumi321.ushio.phitracker.data.database.RecordDao
+import org.kasumi321.ushio.phitracker.data.database.SyncSnapshotDao
 import org.kasumi321.ushio.phitracker.data.database.UserDao
 import org.kasumi321.ushio.phitracker.data.repository.SettingsRepositoryImpl
 import org.kasumi321.ushio.phitracker.domain.repository.SettingsRepository
@@ -51,7 +52,9 @@ object DataModule {
             context,
             AppDatabase::class.java,
             "phi_tracker.db"
-        ).build()
+        )
+            .addMigrations(AppDatabase.MIGRATION_1_2)
+            .build()
     }
 
     @Provides
@@ -59,6 +62,9 @@ object DataModule {
 
     @Provides
     fun provideUserDao(db: AppDatabase): UserDao = db.userDao()
+
+    @Provides
+    fun provideSyncSnapshotDao(db: AppDatabase): SyncSnapshotDao = db.syncSnapshotDao()
 
     @Provides
     @Singleton

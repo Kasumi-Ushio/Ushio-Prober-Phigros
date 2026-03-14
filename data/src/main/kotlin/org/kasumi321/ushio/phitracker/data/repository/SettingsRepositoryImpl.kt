@@ -53,4 +53,20 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setPreloadDone(done: Boolean) {
         preloadPrefs.edit(commit = true) { putBoolean("preload_done", done) }
     }
+
+    private val _avatarUri = MutableStateFlow(prefs.getString("avatar_uri", null))
+    override val avatarUri: Flow<String?> = _avatarUri.asStateFlow()
+
+    override suspend fun setAvatarUri(uri: String?) {
+        prefs.edit { putString("avatar_uri", uri) }
+        _avatarUri.value = uri
+    }
+
+    private val _moneyString = MutableStateFlow(prefs.getString("money_string", "") ?: "")
+    override val moneyString: Flow<String> = _moneyString.asStateFlow()
+
+    override suspend fun setMoneyString(money: String) {
+        prefs.edit { putString("money_string", money) }
+        _moneyString.value = money
+    }
 }

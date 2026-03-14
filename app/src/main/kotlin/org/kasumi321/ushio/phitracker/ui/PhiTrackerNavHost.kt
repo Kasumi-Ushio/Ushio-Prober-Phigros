@@ -24,6 +24,8 @@ sealed class Screen(val route: String) {
     data object Disclaimer : Screen("disclaimer")
     data object Acknowledgments : Screen("acknowledgments")
     data object Licenses : Screen("licenses")
+    data object PrivacyPolicy : Screen("privacy_policy")
+    data object Settings : Screen("settings")
     data object SongDetail : Screen("song_detail/{songId}") {
         fun createRoute(songId: String) = "song_detail/$songId"
     }
@@ -61,6 +63,23 @@ fun PhiTrackerNavHost() {
                 },
                 onNavigateToSongDetail = { songId ->
                     navController.navigate(Screen.SongDetail.createRoute(songId))
+                },
+                onNavigateToSettings = {
+                    navController.navigate(Screen.Settings.route)
+                }
+            )
+        }
+        composable(Screen.Settings.route) {
+            val parentEntry = navController.getBackStackEntry(Screen.Home.route)
+            val viewModel: org.kasumi321.ushio.phitracker.ui.home.HomeViewModel = hiltViewModel(parentEntry)
+            org.kasumi321.ushio.phitracker.ui.settings.SettingsScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToAbout = { navController.navigate(Screen.About.route) },
+                onLogout = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.Home.route) { inclusive = true }
+                    }
                 }
             )
         }
@@ -82,7 +101,8 @@ fun PhiTrackerNavHost() {
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToLicenses = { navController.navigate(Screen.Licenses.route) },
                 onNavigateToDisclaimer = { navController.navigate(Screen.Disclaimer.route) },
-                onNavigateToAcknowledgments = { navController.navigate(Screen.Acknowledgments.route) }
+                onNavigateToAcknowledgments = { navController.navigate(Screen.Acknowledgments.route) },
+                onNavigateToPrivacyPolicy = { navController.navigate(Screen.PrivacyPolicy.route) }
             )
         }
         composable(Screen.Acknowledgments.route) {
@@ -97,6 +117,11 @@ fun PhiTrackerNavHost() {
         }
         composable(Screen.Licenses.route) {
             org.kasumi321.ushio.phitracker.ui.settings.LicensesScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        composable(Screen.PrivacyPolicy.route) {
+            org.kasumi321.ushio.phitracker.ui.settings.PrivacyPolicyScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }

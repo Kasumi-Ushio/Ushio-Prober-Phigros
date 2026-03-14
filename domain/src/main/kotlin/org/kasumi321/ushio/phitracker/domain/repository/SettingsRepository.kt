@@ -14,4 +14,12 @@ interface SettingsRepository {
     // 曲绘下载状态
     suspend fun getPreloadDone(): Boolean
     suspend fun setPreloadDone(done: Boolean)
+
+    // 头像
+    val avatarUri: Flow<String?>
+    suspend fun setAvatarUri(uri: String?)
+
+    // Data (货币)
+    val moneyString: Flow<String>
+    suspend fun setMoneyString(money: String)
 }

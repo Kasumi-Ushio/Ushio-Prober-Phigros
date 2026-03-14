@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import org.kasumi321.ushio.phitracker.ui.components.CenteredListItem
@@ -48,6 +49,7 @@ fun SettingsTab(
     onNavigateToAbout: () -> Unit,
     onLogout: () -> Unit,
     tip: String = "",
+    onNavigateBack: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var showLogoutDialog by remember { mutableStateOf(false) }
@@ -94,6 +96,13 @@ fun SettingsTab(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.fillMaxWidth(0.75f)
                         )
+                    }
+                }
+            },
+            navigationIcon = {
+                if (onNavigateBack != null) {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
                     }
                 }
             }

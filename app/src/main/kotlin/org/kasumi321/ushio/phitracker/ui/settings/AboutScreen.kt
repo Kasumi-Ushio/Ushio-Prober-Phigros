@@ -12,6 +12,7 @@ import com.mikepenz.aboutlibraries.ui.compose.m3.LibrariesContainer
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Gavel
@@ -30,7 +31,8 @@ fun AboutScreen(
     onNavigateBack: () -> Unit,
     onNavigateToLicenses: () -> Unit,
     onNavigateToDisclaimer: () -> Unit,
-    onNavigateToAcknowledgments: () -> Unit
+    onNavigateToAcknowledgments: () -> Unit,
+    onNavigateToPrivacyPolicy: () -> Unit
 ) {
     val uriHandler = LocalUriHandler.current
     val context = LocalContext.current
@@ -105,6 +107,14 @@ fun AboutScreen(
                 leadingContent = { Icon(Icons.Default.Gavel, contentDescription = null) },
                 trailingContent = { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null) },
                 modifier = Modifier.clickable { onNavigateToDisclaimer() }
+            )
+
+            CenteredListItem(
+                headlineContent = { Text("隐私政策") },
+                supportingContent = { Text("了解本应用如何收集、使用和保护您的数据") },
+                leadingContent = { Icon(Icons.Default.Shield, contentDescription = null) },
+                trailingContent = { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null) },
+                modifier = Modifier.clickable { onNavigateToPrivacyPolicy() }
             )
                         
             CenteredListItem(

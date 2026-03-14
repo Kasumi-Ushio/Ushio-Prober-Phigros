@@ -30,6 +30,9 @@ import org.kasumi321.ushio.phitracker.domain.usecase.RksCalculator
 import org.kasumi321.ushio.phitracker.domain.usecase.SearchSongUseCase
 import org.kasumi321.ushio.phitracker.domain.usecase.SyncSaveUseCase
 import org.kasumi321.ushio.phitracker.domain.repository.SettingsRepository
+import org.kasumi321.ushio.phitracker.data.database.SyncSnapshotDao
+import org.kasumi321.ushio.phitracker.data.database.SyncSnapshotEntity
+import org.kasumi321.ushio.phitracker.data.database.RecordDao
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -53,17 +56,24 @@ data class HomeUiState(
     val maxLevel: Int = 16,
     val showFilterSheet: Boolean = false,
     // 曲绘预加载 — 阻塞式流程
-    val illustrationReady: Boolean = false,   // true = 用户已处理预加载 (下载完/跳过), 可以显示内容
+    val illustrationReady: Boolean = false,
     val showPreloadDialog: Boolean = false,
     val preloadProgress: Float = 0f,
     val preloadTotal: Int = 0,
     val preloadCompleted: Int = 0,
     val isPreloading: Boolean = false,
-    
     // 设置
     val themeMode: Int = 0,
     val showB30Overflow: Boolean = false,
-    val overflowCount: Int = 9
+    val overflowCount: Int = 9,
+    // 个人首页
+    val avatarUri: String? = null,
+    val lastSyncTime: Long? = null,
+    val lastSyncedRecord: BestRecord? = null,
+    val moneyString: String = "",
+    val clearCounts: Map<String, Int> = emptyMap(),  // EZ/HD/IN/AT -> count
+    val fcCount: Int = 0,
+    val phiCount: Int = 0
 )
 
 @HiltViewModel
@@ -76,7 +86,9 @@ class HomeViewModel @Inject constructor(
     private val songDataProvider: SongDataProvider,
     private val illustrationProvider: IllustrationProvider,
     private val tipsProvider: TipsProvider,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val syncSnapshotDao: SyncSnapshotDao,
+    private val recordDao: RecordDao
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -104,6 +116,44 @@ class HomeViewModel @Inject constructor(
             settingsRepository.overflowCount.collect { count ->
                 _uiState.update { it.copy(overflowCount = count) }
             }
+        }
+        viewModelScope.launch {
+            settingsRepository.avatarUri.collect { uri ->
+                _uiState.update { it.copy(avatarUri = uri) }
+            }
+        }
+        viewModelScope.launch {
+            settingsRepository.moneyString.collect { money ->
+                _uiState.update { it.copy(moneyString = money) }
+            }
+        }
+        // 加载最近同步快照 + 统计数据
+        viewModelScope.launch {
+            val latest = syncSnapshotDao.getLatest()
+            if (latest != null) {
+                _uiState.update {
+                    it.copy(lastSyncTime = latest.timestamp)
+                }
+            }
+            loadStats()
+        }
+    }
+
+    private suspend fun loadStats() {
+        val clearCounts = mapOf(
+            "EZ" to recordDao.getClearCountByDifficulty("EZ"),
+            "HD" to recordDao.getClearCountByDifficulty("HD"),
+            "IN" to recordDao.getClearCountByDifficulty("IN"),
+            "AT" to recordDao.getClearCountByDifficulty("AT")
+        )
+        val fcCount = recordDao.getTotalFcCount()
+        val phiCount = recordDao.getTotalPhiCount()
+        _uiState.update {
+            it.copy(
+                clearCounts = clearCounts,
+                fcCount = fcCount,
+                phiCount = phiCount
+            )
         }
     }
 
@@ -254,12 +304,55 @@ class HomeViewModel @Inject constructor(
             }
 
             val result = syncSaveUseCase(tokenPair.first, tokenPair.second)
-            _uiState.update {
-                it.copy(
-                    isSyncing = false,
-                    error = result.exceptionOrNull()?.message
+            if (result.isSuccess) {
+                val save = result.getOrThrow()
+                // 格式化 Data 货币 (参考 phi-plugin b19.js)
+                val money = save.gameProgress.money.let { m ->
+                    if (m.isEmpty()) emptyList() else m
+                }
+                val units = listOf("KiB", "MiB", "GiB", "TiB", "PiB")
+                val moneyStr = money.withIndex()
+                    .reversed()
+                    .filter { it.value > 0 }
+                    .joinToString(" ") { "${it.value}${units.getOrElse(it.index) { "" }}" }
+                settingsRepository.setMoneyString(moneyStr)
+
+                // 记录快照
+                val state = _uiState.value
+                val snapshot = SyncSnapshotEntity(
+                    timestamp = System.currentTimeMillis(),
+                    rks = state.displayRks,
+                    nickname = state.nickname,
+                    dataCount = recordDao.getDistinctSongCount(),
+                    lastSyncedSongId = state.b30.firstOrNull()?.songId,
+                    lastSyncedDifficulty = state.b30.firstOrNull()?.difficulty?.name,
+                    lastSyncedScore = state.b30.firstOrNull()?.score,
+                    lastSyncedAccuracy = state.b30.firstOrNull()?.accuracy
                 )
+                syncSnapshotDao.insert(snapshot)
+                _uiState.update {
+                    it.copy(
+                        isSyncing = false,
+                        lastSyncTime = snapshot.timestamp
+                    )
+                }
+                // 刷新统计数据
+                loadStats()
+                Timber.i("Sync snapshot recorded: rks=%.4f, money=%s", snapshot.rks, moneyStr)
+            } else {
+                _uiState.update {
+                    it.copy(
+                        isSyncing = false,
+                        error = result.exceptionOrNull()?.message
+                    )
+                }
             }
+        }
+    }
+
+    fun setAvatarUri(uri: android.net.Uri) {
+        viewModelScope.launch {
+            settingsRepository.setAvatarUri(uri.toString())
         }
     }
 

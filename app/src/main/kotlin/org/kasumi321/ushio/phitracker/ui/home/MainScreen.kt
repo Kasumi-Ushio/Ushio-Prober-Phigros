@@ -11,9 +11,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.StarBorder
+import androidx.compose.material.icons.outlined.Build
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -55,6 +59,7 @@ fun MainScreen(
     onNavigateToB30Image: () -> Unit,
     onNavigateToAbout: () -> Unit,
     onNavigateToSongDetail: (String) -> Unit,
+    onNavigateToSettings: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -63,9 +68,10 @@ fun MainScreen(
     val tip = remember(selectedTab) { viewModel.getRandomTip() }
 
     val navItems = listOf(
+        BottomNavItem("首页", Icons.Filled.Home, Icons.Outlined.Home),
         BottomNavItem("B30", Icons.Filled.Star, Icons.Outlined.StarBorder),
         BottomNavItem("曲目", Icons.Filled.MusicNote, Icons.Outlined.MusicNote),
-        BottomNavItem("设置", Icons.Filled.Settings, Icons.Outlined.Settings)
+        BottomNavItem("工具", Icons.Filled.Build, Icons.Outlined.Build)
     )
 
     // 登出处理
@@ -162,13 +168,31 @@ fun MainScreen(
         }
     ) { innerPadding ->
         when (selectedTab) {
-            0 -> B30Tab(
+            0 -> ProfileTab(
+                nickname = state.nickname,
+                displayRks = state.displayRks,
+                challengeModeRank = state.challengeModeRank,
+                moneyString = state.moneyString,
+                clearCounts = state.clearCounts,
+                fcCount = state.fcCount,
+                phiCount = state.phiCount,
+                avatarUri = state.avatarUri,
+                lastSyncTime = state.lastSyncTime,
+                lastSyncedRecord = state.lastSyncedRecord,
+                isSyncing = state.isSyncing,
+                onRefresh = { viewModel.refresh() },
+                onAvatarSelected = { viewModel.setAvatarUri(it) },
+                onNavigateToSettings = onNavigateToSettings,
+                onSongClick = onNavigateToSongDetail,
+                getIllustrationUrl = { viewModel.getIllustrationUrl(it) },
+                tip = tip,
+                modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
+            )
+            1 -> B30Tab(
                 b30 = state.b30,
                 displayRks = state.displayRks,
                 nickname = state.nickname,
                 challengeModeRank = state.challengeModeRank,
-                isSyncing = state.isSyncing,
-                onRefresh = { viewModel.refresh() },
                 onGenerateImage = onNavigateToB30Image,
                 getIllustrationUrl = { viewModel.getIllustrationUrl(it) },
                 onSongClick = onNavigateToSongDetail,
@@ -177,7 +201,7 @@ fun MainScreen(
                 tip = tip,
                 modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
             )
-            1 -> SongsTab(
+            2 -> SongsTab(
                 songs = state.filteredSongs,
                 searchQuery = state.searchQuery,
                 onSearchChange = { viewModel.searchSongs(it) },
@@ -197,20 +221,17 @@ fun MainScreen(
                 tip = tip,
                 modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
             )
-            2 -> SettingsTab(
-                themeMode = state.themeMode,
-                showB30Overflow = state.showB30Overflow,
-                overflowCount = state.overflowCount,
-                onThemeModeChange = { viewModel.setThemeMode(it) },
-                onShowB30OverflowChange = { viewModel.setShowB30Overflow(it) },
-                onOverflowCountChange = { viewModel.setOverflowCount(it) },
-                onClearHighResCache = { viewModel.clearHighResCache() },
-                onRedownloadIllustrations = { viewModel.resetIllustrationDownloadAndExit() },
-                onNavigateToAbout = onNavigateToAbout,
-                onLogout = { viewModel.logout() },
-                tip = tip,
-                modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
-            )
+            3 -> {
+                // 工具 Tab 占位，将在工作流 3 实现
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(bottom = innerPadding.calculateBottomPadding()),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("工具正在开发中...", style = MaterialTheme.typography.bodyLarge)
+                }
+            }
         }
     }
 }

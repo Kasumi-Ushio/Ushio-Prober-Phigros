@@ -76,6 +76,17 @@ fun AcknowledgmentsScreen(
             SectionTitle("Catrong/phi-plugin")
             SectionText("提供 Phigros 谱面定数等关键元数据的开源数据仓库，存档解析、分类等功能的灵感与参考来源。")
             SectionText("版权所有 (c) 2026 Catrong 及 phi-plugin 贡献者。\nSPDX-License-Identifier: GPL-3.0-only。")
+            SectionText(
+                buildAnnotatedString {
+                    append("我们已获得原作者")
+                    withLink(LinkAnnotation.Url("https://github.com/Catrong/phi-plugin/issues/284")) {
+                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary, textDecoration = TextDecoration.Underline)) {
+                            append("授权")
+                        }
+                    }
+                    append("，对于本项目：SPDX-License-Identifier: GPL-3.0-or-later。")
+                }
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 

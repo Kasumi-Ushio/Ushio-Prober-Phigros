@@ -59,14 +59,6 @@ fun B30Tab(
             title = {
                 Column {
                     Text("Best 30")
-                    if (tip.isNotBlank()) {
-                        Text(
-                            text = tip,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
                 }
             },
             actions = {
@@ -158,6 +150,20 @@ fun B30Tab(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                // Tip section
+                if (tip.isNotBlank()) {
+                    item(contentType = "tip") {
+                        Text(
+                            text = tip,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                        )
+                    }
+                }
+
                 // Phi3 section
                 if (phi3.isNotEmpty()) {
                     item(contentType = "header") {

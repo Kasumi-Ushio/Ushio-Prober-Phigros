@@ -1,5 +1,7 @@
 package org.kasumi321.ushio.phitracker.ui.home
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -167,69 +169,75 @@ fun MainScreen(
             }
         }
     ) { innerPadding ->
-        when (selectedTab) {
-            0 -> ProfileTab(
-                nickname = state.nickname,
-                displayRks = state.displayRks,
-                challengeModeRank = state.challengeModeRank,
-                moneyString = state.moneyString,
-                clearCounts = state.clearCounts,
-                fcCount = state.fcCount,
-                phiCount = state.phiCount,
-                avatarUri = state.avatarUri,
-                lastSyncTime = state.lastSyncTime,
-                lastSyncedRecord = state.lastSyncedRecord,
-                isSyncing = state.isSyncing,
-                onRefresh = { viewModel.refresh() },
-                onAvatarSelected = { viewModel.setAvatarUri(it) },
-                onNavigateToSettings = onNavigateToSettings,
-                onSongClick = onNavigateToSongDetail,
-                getIllustrationUrl = { viewModel.getIllustrationUrl(it) },
-                tip = tip,
-                modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
-            )
-            1 -> B30Tab(
-                b30 = state.b30,
-                displayRks = state.displayRks,
-                nickname = state.nickname,
-                challengeModeRank = state.challengeModeRank,
-                onGenerateImage = onNavigateToB30Image,
-                getIllustrationUrl = { viewModel.getIllustrationUrl(it) },
-                onSongClick = onNavigateToSongDetail,
-                showB30Overflow = state.showB30Overflow,
-                overflowCount = state.overflowCount,
-                tip = tip,
-                modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
-            )
-            2 -> SongsTab(
-                songs = state.filteredSongs,
-                searchQuery = state.searchQuery,
-                onSearchChange = { viewModel.searchSongs(it) },
-                availableChapters = state.availableChapters,
-                selectedChapter = state.selectedChapter,
-                onChapterSelect = { viewModel.filterByChapter(it) },
-                selectedDifficulty = state.selectedDifficulty,
-                onDifficultySelect = { viewModel.filterByDifficulty(it) },
-                minLevel = state.minLevel,
-                maxLevel = state.maxLevel,
-                onLevelRangeSelect = { min, max -> viewModel.filterByLevelRange(min, max) },
-                showFilterSheet = state.showFilterSheet,
-                onToggleFilterSheet = { viewModel.toggleFilterSheet(it) },
-                onResetFilters = { viewModel.resetFilters() },
-                getIllustrationUrl = { viewModel.getIllustrationUrl(it) },
-                onSongClick = onNavigateToSongDetail,
-                tip = tip,
-                modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
-            )
-            3 -> {
-                // 工具 Tab 占位，将在工作流 3 实现
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = innerPadding.calculateBottomPadding()),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("工具正在开发中...", style = MaterialTheme.typography.bodyLarge)
+        Crossfade(
+            targetState = selectedTab,
+            animationSpec = tween(durationMillis = 150),
+            label = "TabCrossfade"
+        ) { targetTab ->
+            when (targetTab) {
+                0 -> ProfileTab(
+                    nickname = state.nickname,
+                    displayRks = state.displayRks,
+                    challengeModeRank = state.challengeModeRank,
+                    moneyString = state.moneyString,
+                    clearCounts = state.clearCounts,
+                    fcCount = state.fcCount,
+                    phiCount = state.phiCount,
+                    avatarUri = state.avatarUri,
+                    lastSyncTime = state.lastSyncTime,
+                    lastSyncedRecord = state.lastSyncedRecord,
+                    isSyncing = state.isSyncing,
+                    onRefresh = { viewModel.refresh() },
+                    onAvatarSelected = { viewModel.setAvatarUri(it) },
+                    onNavigateToSettings = onNavigateToSettings,
+                    onSongClick = onNavigateToSongDetail,
+                    getIllustrationUrl = { viewModel.getIllustrationUrl(it) },
+                    tip = tip,
+                    modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
+                )
+                1 -> B30Tab(
+                    b30 = state.b30,
+                    displayRks = state.displayRks,
+                    nickname = state.nickname,
+                    challengeModeRank = state.challengeModeRank,
+                    onGenerateImage = onNavigateToB30Image,
+                    getIllustrationUrl = { viewModel.getIllustrationUrl(it) },
+                    onSongClick = onNavigateToSongDetail,
+                    showB30Overflow = state.showB30Overflow,
+                    overflowCount = state.overflowCount,
+                    tip = tip,
+                    modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
+                )
+                2 -> SongsTab(
+                    songs = state.filteredSongs,
+                    searchQuery = state.searchQuery,
+                    onSearchChange = { viewModel.searchSongs(it) },
+                    availableChapters = state.availableChapters,
+                    selectedChapter = state.selectedChapter,
+                    onChapterSelect = { viewModel.filterByChapter(it) },
+                    selectedDifficulty = state.selectedDifficulty,
+                    onDifficultySelect = { viewModel.filterByDifficulty(it) },
+                    minLevel = state.minLevel,
+                    maxLevel = state.maxLevel,
+                    onLevelRangeSelect = { min, max -> viewModel.filterByLevelRange(min, max) },
+                    showFilterSheet = state.showFilterSheet,
+                    onToggleFilterSheet = { viewModel.toggleFilterSheet(it) },
+                    onResetFilters = { viewModel.resetFilters() },
+                    getIllustrationUrl = { viewModel.getIllustrationUrl(it) },
+                    onSongClick = onNavigateToSongDetail,
+                    tip = tip,
+                    modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
+                )
+                3 -> {
+                    // 工具 Tab 占位，将在工作流 3 实现
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(bottom = innerPadding.calculateBottomPadding()),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("工具正在开发中...", style = MaterialTheme.typography.bodyLarge)
+                    }
                 }
             }
         }

@@ -36,6 +36,7 @@ import org.kasumi321.ushio.phitracker.data.database.SyncSnapshotEntity
 import org.kasumi321.ushio.phitracker.data.database.SongSyncHistoryDao
 import org.kasumi321.ushio.phitracker.data.database.SongSyncHistoryEntity
 import org.kasumi321.ushio.phitracker.data.database.RecordDao
+import org.kasumi321.ushio.phitracker.data.song.SongDataUpdater
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -76,7 +77,12 @@ data class HomeUiState(
     val moneyString: String = "",
     val clearCounts: Map<String, Int> = emptyMap(),  // EZ/HD/IN/AT -> count
     val fcCount: Int = 0,
-    val phiCount: Int = 0
+    val phiCount: Int = 0,
+    // 曲目数据更新
+    val isUpdatingData: Boolean = false,
+    val updateDataProgress: Int = 0,
+    val updateDataTotal: Int = 0,
+    val updateDataError: String? = null
 )
 
 @HiltViewModel
@@ -92,7 +98,8 @@ class HomeViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val syncSnapshotDao: SyncSnapshotDao,
     private val recordDao: RecordDao,
-    private val songSyncHistoryDao: SongSyncHistoryDao
+    private val songSyncHistoryDao: SongSyncHistoryDao,
+    private val songDataUpdater: SongDataUpdater
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -401,6 +408,28 @@ class HomeViewModel @Inject constructor(
 
     fun getSyncHistory(songId: String): Flow<List<SongSyncHistoryEntity>> {
         return songSyncHistoryDao.getBySongId(songId)
+    }
+
+    fun updateSongData() {
+        if (_uiState.value.isUpdatingData) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isUpdatingData = true, updateDataProgress = 0, updateDataTotal = 4, updateDataError = null) }
+            val result = songDataUpdater.updateSongData { current, total ->
+                _uiState.update { it.copy(updateDataProgress = current, updateDataTotal = total) }
+            }
+            if (result.isSuccess) {
+                _uiState.update { it.copy(isUpdatingData = false) }
+                // 重新加载曲目列表和 B30
+                loadSongs()
+                observeB30()
+            } else {
+                _uiState.update { it.copy(isUpdatingData = false, updateDataError = result.exceptionOrNull()?.message) }
+            }
+        }
+    }
+    
+    fun dismissUpdateDataError() {
+        _uiState.update { it.copy(updateDataError = null) }
     }
 
     fun searchSongs(query: String) {

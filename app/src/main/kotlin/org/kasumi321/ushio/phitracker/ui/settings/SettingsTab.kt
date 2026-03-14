@@ -34,6 +34,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.kasumi321.ushio.phitracker.BuildConfig
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.ui.window.DialogProperties
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,6 +48,12 @@ fun SettingsTab(
     onOverflowCountChange: (Int) -> Unit,
     onClearHighResCache: () -> Unit,
     onRedownloadIllustrations: () -> Unit,
+    isUpdatingData: Boolean = false,
+    updateDataProgress: Int = 0,
+    updateDataTotal: Int = 0,
+    updateDataError: String? = null,
+    onUpdateSongData: () -> Unit = {},
+    onDismissUpdateError: () -> Unit = {},
     onNavigateToAbout: () -> Unit,
     onLogout: () -> Unit,
     tip: String = "",
@@ -55,6 +63,7 @@ fun SettingsTab(
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showClearCacheDialog by remember { mutableStateOf(false) }
     var showRedownloadDialog by remember { mutableStateOf(false) }
+    var showUpdateDataDialog by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -215,6 +224,13 @@ fun SettingsTab(
                 modifier = Modifier.clickable { showRedownloadDialog = true }
             )
 
+            CenteredListItem(
+                headlineContent = { Text("更新曲目数据 (从远程)") },
+                supportingContent = { Text("下载最新的难度、谱师与音符数信息") },
+                leadingContent = { Icon(Icons.Default.CloudDownload, contentDescription = null) },
+                modifier = Modifier.clickable { showUpdateDataDialog = true }
+            )
+
             HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
 
             if (BuildConfig.DEBUG) {
@@ -326,6 +342,55 @@ fun SettingsTab(
             dismissButton = {
                 TextButton(onClick = { showRedownloadDialog = false }) {
                     Text("取消")
+                }
+            }
+        )
+    }
+
+    if (showUpdateDataDialog) {
+        AlertDialog(
+            onDismissRequest = { showUpdateDataDialog = false },
+            title = { Text("更新曲目数据") },
+            text = { Text("将从远程仓库下载最新的曲目数据 (约需几秒钟)，之后将自动刷新本地状态。") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showUpdateDataDialog = false
+                    onUpdateSongData()
+                }) {
+                    Text("开始下载")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showUpdateDataDialog = false }) {
+                    Text("取消")
+                }
+            }
+        )
+    }
+
+    if (isUpdatingData) {
+        AlertDialog(
+            onDismissRequest = { /* 不允许取消 */ },
+            properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
+            title = { Text("正在更新...") },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+                    Text("下载进度：$updateDataProgress / $updateDataTotal")
+                }
+            },
+            confirmButton = {}
+        )
+    }
+
+    if (updateDataError != null) {
+        AlertDialog(
+            onDismissRequest = onDismissUpdateError,
+            title = { Text("更新失败") },
+            text = { Text("发生了错误：\n$updateDataError") },
+            confirmButton = {
+                TextButton(onClick = onDismissUpdateError) {
+                    Text("确定")
                 }
             }
         )

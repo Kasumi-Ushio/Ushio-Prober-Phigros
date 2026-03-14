@@ -7,6 +7,9 @@ import kotlinx.serialization.json.Json
 import org.kasumi321.ushio.phitracker.domain.model.Difficulty
 import org.kasumi321.ushio.phitracker.domain.model.NoteCount
 import org.kasumi321.ushio.phitracker.domain.model.SongInfo
+import java.io.File
+import java.io.FileInputStream
+import java.io.InputStream
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -30,6 +33,19 @@ class SongDataProvider @Inject constructor(
     private var _songs: Map<String, SongInfo>? = null
 
     private val json = Json { ignoreUnknownKeys = true }
+
+    fun invalidateCache() {
+        _songs = null
+    }
+
+    private fun openFileStream(fileName: String): InputStream {
+        val file = File(context.filesDir, "song_data/$fileName")
+        return if (file.exists() && file.isFile) {
+            FileInputStream(file)
+        } else {
+            context.assets.open(fileName)
+        }
+    }
 
     fun getSongs(): Map<String, SongInfo> {
         _songs?.let { return it }
@@ -83,7 +99,7 @@ class SongDataProvider @Inject constructor(
 
     private fun loadDifficulties(): Map<String, Map<Difficulty, Float>> {
         val result = mutableMapOf<String, Map<Difficulty, Float>>()
-        context.assets.open("difficulty.csv").bufferedReader().useLines { lines ->
+        openFileStream("difficulty.csv").bufferedReader().useLines { lines ->
             for ((index, line) in lines.withIndex()) {
                 if (index == 0) continue // 跳过表头
                 if (line.isBlank()) continue
@@ -112,7 +128,7 @@ class SongDataProvider @Inject constructor(
 
     private fun loadInfos(): Map<String, InfoCsvModel> {
         val result = mutableMapOf<String, InfoCsvModel>()
-        context.assets.open("info.csv").bufferedReader().useLines { lines ->
+        openFileStream("info.csv").bufferedReader().useLines { lines ->
             for ((index, line) in lines.withIndex()) {
                 if (index == 0) continue // 跳过表头
                 if (line.isBlank()) continue
@@ -143,7 +159,7 @@ class SongDataProvider @Inject constructor(
     )
 
     private fun loadAdditionalInfo(): Map<String, InfoListEntry> {
-        val jsonString = context.assets.open("infolist.json").bufferedReader().readText()
+        val jsonString = openFileStream("infolist.json").bufferedReader().readText()
         return json.decodeFromString(jsonString)
     }
 
@@ -153,7 +169,7 @@ class SongDataProvider @Inject constructor(
     )
 
     private fun loadNotesInfo(): Map<String, Map<String, NotesInfoDifficulty>> {
-        val jsonString = context.assets.open("notesInfo.json").bufferedReader().readText()
+        val jsonString = openFileStream("notesInfo.json").bufferedReader().readText()
         return json.decodeFromString(jsonString)
     }
 

@@ -47,7 +47,7 @@ class TokenManager @Inject constructor(
         prefs.edit()
             .remove(KEY_SESSION_TOKEN)
             .remove(KEY_SERVER)
-            .apply()
+            .commit()  // 同步写入，确保 token 在导航之前已清除
     }
 
     companion object {

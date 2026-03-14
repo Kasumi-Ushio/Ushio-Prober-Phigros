@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
 import org.kasumi321.ushio.phitracker.ui.home.HomeViewModel
 
 /**
@@ -38,7 +37,7 @@ fun SettingsScreen(
         onUpdateSongData = { viewModel.updateSongData() },
         onDismissUpdateError = { viewModel.dismissUpdateDataError() },
         onNavigateToAbout = onNavigateToAbout,
-        onLogout = onLogout,
+        onLogout = { viewModel.logout(onLogout) },
         tip = tip,
         onNavigateBack = onNavigateBack
     )

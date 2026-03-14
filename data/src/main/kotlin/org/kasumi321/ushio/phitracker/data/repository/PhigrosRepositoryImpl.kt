@@ -165,4 +165,8 @@ class PhigrosRepositoryImpl @Inject constructor(
         recordDao.deleteAll()
         userDao.deleteAll()
     }
+
+    override fun clearTokenSync() {
+        tokenManager.clearToken()  // EncryptedSharedPreferences 使用 commit() 同步记录
+    }
 }

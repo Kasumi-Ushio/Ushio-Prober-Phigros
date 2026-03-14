@@ -358,13 +358,13 @@ fun SettingsTab(
         AlertDialog(
             onDismissRequest = { showUpdateDataDialog = false },
             title = { Text("更新曲目数据") },
-            text = { Text("将从远程仓库下载最新的曲目数据 (约需几秒钟)，之后将自动刷新本地状态。") },
+            text = { Text("将从远程仓库下载最新的曲目数据，之后将自动刷新本地状态。\n下载完毕后，推荐重新下载所有曲绘。") },
             confirmButton = {
                 TextButton(onClick = {
                     showUpdateDataDialog = false
                     onUpdateSongData()
                 }) {
-                    Text("开始下载")
+                    Text("确定")
                 }
             },
             dismissButton = {

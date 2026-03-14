@@ -14,4 +14,5 @@ interface PhigrosRepository {
     suspend fun saveSessionToken(token: String, server: Server)
     suspend fun getSessionToken(): Pair<String, Server>?
     suspend fun clearData()
+    fun clearTokenSync()
 }

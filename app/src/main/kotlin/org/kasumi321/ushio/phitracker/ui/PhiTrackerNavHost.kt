@@ -67,7 +67,7 @@ fun PhiTrackerNavHost() {
             MainScreen(
                 onLogout = {
                     navController.navigate(Screen.Login.route) {
-                        popUpTo(Screen.Home.route) { inclusive = true }
+                        popUpTo(navController.graph.id) { inclusive = true }
                     }
                 },
                 onNavigateToB30Image = {
@@ -93,7 +93,7 @@ fun PhiTrackerNavHost() {
                 onNavigateToAbout = { navController.navigate(Screen.About.route) },
                 onLogout = {
                     navController.navigate(Screen.Login.route) {
-                        popUpTo(Screen.Home.route) { inclusive = true }
+                        popUpTo(navController.graph.id) { inclusive = true }
                     }
                 }
             )

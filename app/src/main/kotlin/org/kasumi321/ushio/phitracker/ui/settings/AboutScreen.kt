@@ -24,6 +24,7 @@ import org.kasumi321.ushio.phitracker.ui.components.CenteredListItem
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,13 +39,10 @@ fun AboutScreen(
     val context = LocalContext.current
     
     val buildTime = remember {
-        try {
-            val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
-            sdf.format(Date(packageInfo.lastUpdateTime))
-        } catch (e: Exception) {
-            "未知"
+        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).apply {
+            timeZone = TimeZone.getDefault()
         }
+        sdf.format(Date(BuildConfig.BUILD_TIMESTAMP))
     }
     val buildType = if (BuildConfig.DEBUG) "Debug 构建" else "Release 构建"
 

@@ -509,11 +509,21 @@ class HomeViewModel @Inject constructor(
         return tipsProvider.getRandomTip()
     }
 
-    fun logout() {
+    /**
+     * 退出登录：同步清除 Token，异步清理 Room
+     * 然后将导航回登录页的动作交给调用方执行
+     */
+    fun logout(onNavigate: () -> Unit) {
+        // 1. 同步清除 Token（commit()），确保导航前 token 已删除
+        repository.clearTokenSync()
+        // 2. 后台清除 Room 数据（不阻塞导航）
         viewModelScope.launch {
-            repository.clearData()
-            _uiState.update { it.copy(isLoggedOut = true) }
+            try {
+                repository.clearData()  // token 已清除，这里只需清 Room
+            } catch (_: Exception) {}
         }
+        // 3. 立即触发导航
+        onNavigate()
     }
 
     fun clearError() {
@@ -543,6 +553,7 @@ class HomeViewModel @Inject constructor(
             Timber.i("Cleared high-res cache for %d songs", clearedCount)
         }
     }
+
 
     fun resetIllustrationDownloadAndExit() {
         viewModelScope.launch {

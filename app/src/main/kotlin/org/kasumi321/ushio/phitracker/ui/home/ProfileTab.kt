@@ -129,7 +129,7 @@ fun ProfileTab(
                             text = tip,
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.fillMaxWidth(0.75f)
+                            modifier = Modifier.fillMaxWidth(1f)
                         )
                     }
                 }

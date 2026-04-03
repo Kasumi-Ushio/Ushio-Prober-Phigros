@@ -511,7 +511,7 @@ fun SettingsTab(
                     headlineContent = { Text("导出崩溃日志") },
                     supportingContent = {
                         if (isExporting) Text("正在导出...")
-                        else Text("导出 ACRA 崩溃报告，当 App 崩溃时可用于 issue 反馈")
+                        else Text("导出运行时的崩溃报告，当 App 崩溃时可用于 issue 反馈")
                     },
                     leadingContent = { Icon(Icons.Default.BugReport, contentDescription = null) },
                     modifier = Modifier.clickable(enabled = !isExporting) {
@@ -527,7 +527,7 @@ fun SettingsTab(
                     headlineContent = { Text("导出运行日志") },
                     supportingContent = {
                         if (isExporting) Text("正在导出...")
-                        else Text("导出 Timber + Logcat 运行日志，用于复现问题时分析")
+                        else Text("导出运行日志，用于复现问题时分析")
                     },
                     leadingContent = { Icon(Icons.Default.BugReport, contentDescription = null) },
                     modifier = Modifier.clickable(enabled = !isExporting) {

@@ -171,6 +171,14 @@ fun PhiTrackerNavHost() {
                 b30 = state.b30,
                 displayRks = state.displayRks,
                 nickname = state.nickname,
+                challengeModeRank = state.challengeModeRank,
+                moneyString = state.moneyString,
+                clearCounts = state.clearCounts,
+                fcCount = state.fcCount,
+                phiCount = state.phiCount,
+                avatarUri = state.avatarUri,
+                lowIllustrationUrlProvider = viewModel::getIllustrationUrl,
+                standardIllustrationUrlProvider = viewModel::getStandardIllustrationUrl,
                 onBack = { navController.popBackStack() }
             )
         }

@@ -58,3 +58,4 @@ yarn.lock
 .envrc
 .direnv/
 .env
+internal-resources/

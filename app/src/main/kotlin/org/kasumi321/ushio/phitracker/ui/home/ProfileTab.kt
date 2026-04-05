@@ -51,6 +51,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import org.kasumi321.ushio.phitracker.domain.model.BestRecord
 import org.kasumi321.ushio.phitracker.ui.theme.DifficultyColors
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -113,11 +114,10 @@ fun ProfileTab(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
-            // 获取持久化 URI 权限
-            context.contentResolver.takePersistableUriPermission(
-                it, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
-            )
-            onAvatarSelected(it)
+            val copied = copyAvatarToPrivateStorage(context, it)
+            if (copied != null) {
+                onAvatarSelected(copied)
+            }
         }
     }
 
@@ -343,6 +343,28 @@ fun ProfileTab(
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
+}
+
+private fun copyAvatarToPrivateStorage(context: android.content.Context, sourceUri: Uri): Uri? {
+    return runCatching {
+        val avatarDir = File(context.filesDir, "avatar").apply { mkdirs() }
+        val targetFile = File(avatarDir, "avatar_${System.currentTimeMillis()}.jpg")
+
+        context.contentResolver.openInputStream(sourceUri).use { input ->
+            requireNotNull(input) { "Failed to open avatar input stream." }
+            targetFile.outputStream().use { output ->
+                input.copyTo(output)
+            }
+        }
+
+        // Keep only the newest 3 avatars to avoid unbounded growth.
+        avatarDir.listFiles()
+            ?.sortedByDescending { file -> file.lastModified() }
+            ?.drop(3)
+            ?.forEach { file -> file.delete() }
+
+        Uri.fromFile(targetFile)
+    }.getOrNull()
 }
 
 /**

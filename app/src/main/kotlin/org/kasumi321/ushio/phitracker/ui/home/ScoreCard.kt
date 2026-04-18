@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,6 +34,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import coil.request.CachePolicy
 import org.kasumi321.ushio.phitracker.domain.model.BestRecord
+import org.kasumi321.ushio.phitracker.domain.usecase.SuggestItem
 import org.kasumi321.ushio.phitracker.ui.theme.DifficultyColors
 
 /**
@@ -219,6 +221,150 @@ fun ScoreCard(
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SuggestScoreCard(
+    item: SuggestItem,
+    illustrationUrl: String?,
+    onSongClick: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val diffColor = DifficultyColors.forDifficulty(item.difficulty)
+    val isAp = (item.currentAcc ?: 0f) >= 100f
+
+    val ccText = remember(item.chartConstant, item.difficulty) {
+        "${DifficultyColors.labelFor(item.difficulty)} ${String.format("%.1f", item.chartConstant)}"
+    }
+    val currentAccText = remember(item.currentAcc) { item.currentAcc?.let { String.format("%.2f%%", it) } ?: "暂无" }
+    val targetAccText = remember(item.targetAcc) { String.format("%.2f%%", item.targetAcc) }
+    val currentRksText = remember(item.currentRks) { String.format("%.4f", item.currentRks) }
+    val potentialRksText = remember(item.potentialRks) { String.format("%.4f", item.potentialRks) }
+
+    val context = LocalContext.current
+    val imageRequest = remember(illustrationUrl) {
+        illustrationUrl?.let {
+            ImageRequest.Builder(context)
+                .data(it)
+                .size(168)
+                .networkCachePolicy(CachePolicy.READ_ONLY)
+                .crossfade(200)
+                .build()
+        }
+    }
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onSongClick(item.songId) },
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (imageRequest != null) {
+                AsyncImage(
+                    model = imageRequest,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Crop
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = item.songName,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(diffColor)
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = ccText,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.surface,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 10.sp
+                        )
+                    }
+
+                    when {
+                        isAp -> {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(ApColor)
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "φ",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = ApTextColor,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 10.sp
+                                )
+                            }
+                        }
+                        item.isFullCombo -> {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(FcColor)
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "FC",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 10.sp
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = "ACC $currentAccText → $targetAccText",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.End
+                )
+                Text(
+                    text = "RKS $currentRksText → $potentialRksText",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.End
                 )
             }
         }

@@ -25,6 +25,7 @@ class SettingsRepositoryImpl @Inject constructor(
         private const val KEY_AVATAR_URI = "avatar_uri"
         private const val KEY_MONEY_STRING = "money_string"
         private const val KEY_INCLUDE_PRE_RELEASE = "include_pre_release"
+        private const val KEY_AUTO_CHECK_UPDATE = "auto_check_update"
 
         private const val KEY_API_ENABLED = "api_enabled"
         private const val KEY_USE_API_DATA = "use_api_data"
@@ -44,7 +45,7 @@ class SettingsRepositoryImpl @Inject constructor(
     private val _showB30Overflow = MutableStateFlow(prefs.getBoolean(KEY_SHOW_B30_OVERFLOW, false))
     override val showB30Overflow: Flow<Boolean> = _showB30Overflow.asStateFlow()
 
-    private val _overflowCount = MutableStateFlow(prefs.getInt(KEY_OVERFLOW_COUNT, 9))
+    private val _overflowCount = MutableStateFlow(prefs.getInt(KEY_OVERFLOW_COUNT, 9).coerceIn(1, 30))
     override val overflowCount: Flow<Int> = _overflowCount.asStateFlow()
 
     override suspend fun setThemeMode(mode: Int) {
@@ -60,8 +61,9 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     override suspend fun setOverflowCount(count: Int) {
-        prefs.edit { putInt(KEY_OVERFLOW_COUNT, count) }
-        _overflowCount.value = count
+        val normalized = count.coerceIn(1, 30)
+        prefs.edit { putInt(KEY_OVERFLOW_COUNT, normalized) }
+        _overflowCount.value = normalized
     }
 
     override suspend fun getPreloadDone(): Boolean {
@@ -94,6 +96,14 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setIncludePreRelease(enabled: Boolean) {
         prefs.edit { putBoolean(KEY_INCLUDE_PRE_RELEASE, enabled) }
         _includePreRelease.value = enabled
+    }
+
+    private val _autoCheckUpdate = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CHECK_UPDATE, true))
+    override val autoCheckUpdate: Flow<Boolean> = _autoCheckUpdate.asStateFlow()
+
+    override suspend fun setAutoCheckUpdate(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_AUTO_CHECK_UPDATE, enabled) }
+        _autoCheckUpdate.value = enabled
     }
 
     private val _apiEnabled = MutableStateFlow(prefs.getBoolean(KEY_API_ENABLED, false))

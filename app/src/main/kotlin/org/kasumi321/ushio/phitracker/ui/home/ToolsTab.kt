@@ -47,8 +47,10 @@ import androidx.compose.ui.unit.sp
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.ceil
 import org.kasumi321.ushio.phitracker.data.database.SyncSnapshotEntity
 import org.kasumi321.ushio.phitracker.domain.usecase.RksCalculator
+import org.kasumi321.ushio.phitracker.domain.usecase.SuggestItem
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -61,9 +63,12 @@ fun ToolsTab(
         apiRankByUser: ApiToolResult,
         apiRankByPosition: ApiToolResult,
         apiRksRankResult: ApiToolResult,
+        suggestItems: List<SuggestItem>,
         onFetchRankByUser: () -> Unit,
         onFetchRankByPosition: (Int) -> Unit,
         onFetchRksRank: (Float) -> Unit,
+        onNavigateToSongDetail: (String) -> Unit,
+        getIllustrationUrl: (String) -> String?,
         tip: String,
         modifier: Modifier = Modifier
 ) {
@@ -105,6 +110,18 @@ fun ToolsTab(
                     subtitle = "根据定数和准确率计算等效 RKS",
                     icon = Icons.Default.Calculate
             ) { RksCalculatorContent() }
+
+            CollapsibleToolCard(
+                    title = "推分建议",
+                    subtitle = "根据当前 B30 和存档数据推荐可推分曲目",
+                    icon = Icons.Default.ShowChart
+            ) {
+                SuggestionContent(
+                    suggestItems = suggestItems,
+                    onNavigateToSongDetail = onNavigateToSongDetail,
+                    getIllustrationUrl = getIllustrationUrl
+                )
+            }
 
             // Section 2: RKS 历史变化
             CollapsibleToolCard(
@@ -152,6 +169,66 @@ fun ToolsTab(
             ) { SessionTokenContent(sessionToken) }
 
             Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun SuggestionContent(
+    suggestItems: List<SuggestItem>,
+    onNavigateToSongDetail: (String) -> Unit,
+    getIllustrationUrl: (String) -> String?
+) {
+    if (suggestItems.isEmpty()) {
+        Text(
+            text = "暂无推分建议（请先同步存档）",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        return
+    }
+
+    val pageSize = 5
+    val cappedItems = remember(suggestItems) { suggestItems.take(30) }
+    val totalPages = remember(cappedItems) { ceil(cappedItems.size / pageSize.toFloat()).toInt().coerceAtLeast(1) }
+    var currentPage by rememberSaveable(cappedItems.size) { mutableStateOf(0) }
+    currentPage = currentPage.coerceIn(0, totalPages - 1)
+
+    val start = currentPage * pageSize
+    val end = (start + pageSize).coerceAtMost(cappedItems.size)
+    val pageItems = cappedItems.subList(start, end)
+
+    pageItems.forEach { item ->
+        SuggestScoreCard(
+            item = item,
+            illustrationUrl = getIllustrationUrl(item.songId),
+            onSongClick = onNavigateToSongDetail
+        )
+    }
+
+    if (totalPages > 1) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedButton(
+                onClick = { currentPage = (currentPage - 1).coerceAtLeast(0) },
+                enabled = currentPage > 0
+            ) {
+                Text("上一页")
+            }
+            Text(
+                text = "第 ${currentPage + 1} / $totalPages 页",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            OutlinedButton(
+                onClick = { currentPage = (currentPage + 1).coerceAtMost(totalPages - 1) },
+                enabled = currentPage < totalPages - 1
+            ) {
+                Text("下一页")
+            }
         }
     }
 }
@@ -436,11 +513,7 @@ private fun ApiRankByUserContent(state: ApiToolResult, onFetch: () -> Unit) {
         }
         Text("查询当前用户排名")
     }
-    Text(
-            text = state.message ?: "尚未查询",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-    )
+    ApiToolResultPanel(state = state)
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -470,11 +543,7 @@ private fun ApiRankByPositionContent(state: ApiToolResult, onFetch: (Int) -> Uni
             }
         }
     }
-    Text(
-            text = state.message ?: "尚未查询",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-    )
+    ApiToolResultPanel(state = state)
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -507,11 +576,54 @@ private fun ApiRksRankContent(state: ApiToolResult, defaultRks: Float, onFetch: 
             }
         }
     }
+    ApiToolResultPanel(state = state)
+}
+
+@Composable
+private fun ApiToolResultPanel(state: ApiToolResult) {
+    if (state.rows.isNotEmpty()) {
+        ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                state.rows.forEach { row ->
+                    RankInfoRow(label = row.label, value = row.value)
+                }
+            }
+        }
+        return
+    }
+
     Text(
-            text = state.message ?: "尚未查询",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+        text = state.message ?: "尚未查询",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
     )
+}
+
+@Composable
+private fun RankInfoRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.weight(0.38f)
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.End,
+            modifier = Modifier.weight(0.62f)
+        )
+    }
 }
 
 // ══════════════════════════════════════════════════════════════

@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -27,8 +28,10 @@ import org.kasumi321.ushio.phitracker.domain.model.Difficulty
 import org.kasumi321.ushio.phitracker.domain.model.SongInfo
 import org.kasumi321.ushio.phitracker.domain.repository.PhigrosRepository
 import org.kasumi321.ushio.phitracker.domain.usecase.GetB30UseCase
+import org.kasumi321.ushio.phitracker.domain.usecase.GetSuggestUseCase
 import org.kasumi321.ushio.phitracker.domain.usecase.RksCalculator
 import org.kasumi321.ushio.phitracker.domain.usecase.SearchSongUseCase
+import org.kasumi321.ushio.phitracker.domain.usecase.SuggestItem
 import org.kasumi321.ushio.phitracker.domain.usecase.SyncSaveUseCase
 import org.kasumi321.ushio.phitracker.domain.repository.SettingsRepository
 import org.kasumi321.ushio.phitracker.data.database.SyncSnapshotDao
@@ -67,7 +70,13 @@ sealed class UpdateCheckState {
 
 data class ApiToolResult(
     val isLoading: Boolean = false,
-    val message: String? = null
+    val message: String? = null,
+    val rows: List<ApiToolRow> = emptyList()
+)
+
+data class ApiToolRow(
+    val label: String,
+    val value: String
 )
 
 data class SongApiDetailState(
@@ -131,6 +140,7 @@ data class HomeUiState(
     val sessionToken: String? = null,
     // 应用更新
     val includePreRelease: Boolean = false,
+    val autoCheckUpdate: Boolean = true,
     val updateCheckState: UpdateCheckState = UpdateCheckState.Idle,
     // 查分 API
     val apiEnabled: Boolean = false,
@@ -145,6 +155,7 @@ data class HomeUiState(
     val apiRankByUser: ApiToolResult = ApiToolResult(),
     val apiRankByPosition: ApiToolResult = ApiToolResult(),
     val apiRksRankResult: ApiToolResult = ApiToolResult(),
+    val suggestItems: List<SuggestItem> = emptyList(),
     val songApiDetailMap: Map<String, SongApiDetailState> = emptyMap()
 )
 
@@ -153,6 +164,7 @@ class HomeViewModel @Inject constructor(
     @ApplicationContext private val appContext: Context,
     private val repository: PhigrosRepository,
     private val getB30UseCase: GetB30UseCase,
+    private val getSuggestUseCase: GetSuggestUseCase,
     private val syncSaveUseCase: SyncSaveUseCase,
     private val searchSongUseCase: SearchSongUseCase,
     private val songDataProvider: SongDataProvider,
@@ -204,6 +216,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             syncSnapshotDao.getAll().collect { list ->
                 _uiState.update { it.copy(syncSnapshots = list) }
+                loadRecentEffectiveSyncHistory()
             }
         }
         // 工具 Tab: 加载 sessionToken
@@ -215,6 +228,16 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepository.includePreRelease.collect { enabled ->
                 _uiState.update { it.copy(includePreRelease = enabled) }
+            }
+        }
+        viewModelScope.launch {
+            settingsRepository.autoCheckUpdate.collect { enabled ->
+                _uiState.update { it.copy(autoCheckUpdate = enabled) }
+            }
+        }
+        viewModelScope.launch {
+            if (settingsRepository.autoCheckUpdate.first()) {
+                checkForUpdate()
             }
         }
         // 观察查分 API 设置
@@ -244,17 +267,7 @@ class HomeViewModel @Inject constructor(
         }
         // 加载最近同步快照 + 统计数据
         viewModelScope.launch {
-            val latest = syncSnapshotDao.getLatest()
-            if (latest != null) {
-                _uiState.update {
-                    it.copy(lastSyncTime = latest.timestamp)
-                }
-                loadSyncRecordsForSnapshot(latest.id)
-            } else {
-                _uiState.update {
-                    it.copy(recentSyncedRecords = emptyList(), lastSyncedRecord = null)
-                }
-            }
+            loadRecentEffectiveSyncHistory()
             loadStats()
         }
     }
@@ -297,11 +310,22 @@ class HomeViewModel @Inject constructor(
                 .stateIn(viewModelScope, SharingStarted.Eagerly, Pair(emptyList(), emptyList()))
                 .collect { (b30, allRecords) ->
                     val computedRks = RksCalculator.calculateDisplayRks(b30)
+                    val cachedSave = repository.getCachedSave().first()
+                    val suggestItems = cachedSave?.let {
+                        getSuggestUseCase(
+                            currentB30 = b30,
+                            records = it.gameRecord,
+                            difficulties = diffMap,
+                            songNames = nameMap,
+                            limit = 30
+                        )
+                    }.orEmpty()
                     _uiState.update {
                         it.copy(
                             b30 = b30,
                             allRecords = allRecords,
                             displayRks = if (it.displayRks == 0f) computedRks else it.displayRks,
+                            suggestItems = suggestItems,
                             isLoading = false
                         )
                     }
@@ -487,21 +511,12 @@ class HomeViewModel @Inject constructor(
 
                     _uiState.update {
                         it.copy(
-                            isSyncing = false,
-                            lastSyncTime = snapshot.timestamp
+                            isSyncing = false
                         )
                     }
-                    loadSyncRecordsForSnapshot(snapshotId)
                     Timber.i("Sync snapshot #%d recorded: rks=%.4f, money=%s", snapshotId, snapshot.rks, moneyStr)
                 } else {
-                    _uiState.update {
-                        it.copy(
-                            isSyncing = false,
-                            lastSyncTime = now,
-                            recentSyncedRecords = emptyList(),
-                            lastSyncedRecord = null
-                        )
-                    }
+                    _uiState.update { it.copy(isSyncing = false) }
                     Timber.i("Sync completed with no score/acc changes; snapshot not recorded")
                 }
                 // 刷新统计数据
@@ -509,6 +524,7 @@ class HomeViewModel @Inject constructor(
                 if (_uiState.value.apiEnabled && _uiState.value.useApiData) {
                     refreshApiToolData()
                 }
+                loadRecentEffectiveSyncHistory()
             } else {
                 _uiState.update {
                     it.copy(
@@ -530,10 +546,20 @@ class HomeViewModel @Inject constructor(
         return songSyncHistoryDao.getBySongId(songId)
     }
 
-    private suspend fun loadSyncRecordsForSnapshot(snapshotId: Long) {
+    private suspend fun loadRecentEffectiveSyncHistory(limit: Int = 3) {
         val songs = songDataProvider.getSongs()
-        val recentHistory = songSyncHistoryDao.getBySnapshotId(snapshotId)
-        val recentRecords = recentHistory.mapNotNull { entry ->
+        val snapshots = syncSnapshotDao.getAllOnce()
+        val effectiveEntries = mutableListOf<Pair<SyncSnapshotEntity, SongSyncHistoryEntity>>()
+
+        for (snapshot in snapshots) {
+            val entries = songSyncHistoryDao.getBySnapshotId(snapshot.id)
+            if (entries.isNotEmpty()) {
+                effectiveEntries += snapshot to entries.first()
+            }
+            if (effectiveEntries.size >= limit) break
+        }
+
+        val recentRecords = effectiveEntries.mapNotNull { (_, entry) ->
             val difficulty = runCatching { Difficulty.valueOf(entry.difficulty) }.getOrNull()
                 ?: return@mapNotNull null
             val song = songs[entry.songId]
@@ -554,6 +580,7 @@ class HomeViewModel @Inject constructor(
 
         _uiState.update {
             it.copy(
+                lastSyncTime = effectiveEntries.firstOrNull()?.first?.timestamp,
                 recentSyncedRecords = recentRecords,
                 lastSyncedRecord = recentRecords.firstOrNull()
             )
@@ -686,7 +713,7 @@ class HomeViewModel @Inject constructor(
     // --- 设置相关 ---
     fun setThemeMode(mode: Int) = viewModelScope.launch { settingsRepository.setThemeMode(mode) }
     fun setShowB30Overflow(show: Boolean) = viewModelScope.launch { settingsRepository.setShowB30Overflow(show) }
-    fun setOverflowCount(count: Int) = viewModelScope.launch { settingsRepository.setOverflowCount(count) }
+    fun setOverflowCount(count: Int) = viewModelScope.launch { settingsRepository.setOverflowCount(count.coerceIn(1, 30)) }
     fun enableApi() = viewModelScope.launch { settingsRepository.setApiEnabled(true) }
     fun disableApi() = viewModelScope.launch { settingsRepository.setApiEnabled(false) }
     fun setUseApiData(useApiData: Boolean) = viewModelScope.launch { settingsRepository.setUseApiData(useApiData) }
@@ -790,7 +817,13 @@ class HomeViewModel @Inject constructor(
                 if (!mePlayerId.isNullOrBlank()) append("  |  玩家: $mePlayerId")
                 if (meRks != null) append("  |  RKS: ${"%.4f".format(meRks)}")
             }
-            _uiState.update { it.copy(apiRankByUser = ApiToolResult(message = msg)) }
+            val rows = buildList {
+                if (!mePlayerId.isNullOrBlank()) add(ApiToolRow("玩家昵称", mePlayerId))
+                if (meRks != null) add(ApiToolRow("RKS", "%.4f".format(meRks)))
+                if (meRank != null) add(ApiToolRow("我的名次", meRank?.toString() ?: "—"))
+                add(ApiToolRow("总人数", total?.toString() ?: "—"))
+            }
+            _uiState.update { it.copy(apiRankByUser = ApiToolResult(message = msg, rows = rows)) }
         }
     }
 
@@ -829,7 +862,14 @@ class HomeViewModel @Inject constructor(
                 append("  |  用户: ${playerId ?: "未知"}")
                 if (rks != null) append("  |  RKS: ${"%.4f".format(rks)}")
             }
-            _uiState.update { it.copy(apiRankByPosition = ApiToolResult(message = msg)) }
+            val rows = buildList {
+                add(ApiToolRow("请求名次", position.toString()))
+                add(ApiToolRow("返回名次", rank?.toString() ?: "—"))
+                add(ApiToolRow("玩家昵称", playerId ?: "未知"))
+                if (rks != null) add(ApiToolRow("RKS", "%.4f".format(rks)))
+                add(ApiToolRow("匹配状态", if (exact) "精确匹配" else "最接近匹配"))
+            }
+            _uiState.update { it.copy(apiRankByPosition = ApiToolResult(message = msg, rows = rows)) }
         }
     }
 
@@ -859,7 +899,12 @@ class HomeViewModel @Inject constructor(
                     apiTotalUsers = total,
                     apiRksRank = rank,
                     apiRksRankResult = ApiToolResult(
-                        message = "大于 ${"%.4f".format(rks)} 的用户数: ${rank ?: "—"} / ${total ?: "—"}"
+                        message = "大于 ${"%.4f".format(rks)} 的用户数: ${rank ?: "—"} / ${total ?: "—"}",
+                        rows = listOf(
+                            ApiToolRow("目标 RKS", "%.4f".format(rks)),
+                            ApiToolRow("大于该 RKS 用户数", rank?.toString() ?: "—"),
+                            ApiToolRow("总人数", total?.toString() ?: "—")
+                        )
                     )
                 )
             }
@@ -1150,6 +1195,10 @@ class HomeViewModel @Inject constructor(
 
     fun setIncludePreRelease(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.setIncludePreRelease(enabled) }
+    }
+
+    fun setAutoCheckUpdate(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setAutoCheckUpdate(enabled) }
     }
 
     fun dismissUpdateResult() {

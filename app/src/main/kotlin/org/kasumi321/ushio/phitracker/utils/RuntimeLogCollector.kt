@@ -87,11 +87,13 @@ object RuntimeLogCollector {
                     rotateLogs(dir, current)
                 }
 
+                val sanitizedMessage = LogSanitizer.sanitize(message)
+                val sanitizedStacktrace = t?.let { LogSanitizer.sanitize(Log.getStackTraceString(it)) }
                 openWriter(current, append = true).use { writer ->
                     writer.appendLine(
-                        "${timestampFormat.format(Date())} ${priorityToChar(priority)}/${tag ?: "PhiTracker"}: $message"
+                        "${timestampFormat.format(Date())} ${priorityToChar(priority)}/${tag ?: "PhiTracker"}: $sanitizedMessage"
                     )
-                    t?.let { writer.appendLine(Log.getStackTraceString(it)) }
+                    sanitizedStacktrace?.let { writer.appendLine(it) }
                 }
             }
         }

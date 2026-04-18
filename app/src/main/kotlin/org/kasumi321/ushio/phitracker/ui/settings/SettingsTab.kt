@@ -73,9 +73,11 @@ fun SettingsTab(
     onNavigateToAbout: () -> Unit,
     onLogout: () -> Unit,
     includePreRelease: Boolean = false,
+    autoCheckUpdate: Boolean = true,
     updateCheckState: UpdateCheckState = UpdateCheckState.Idle,
     onCheckForUpdate: () -> Unit = {},
     onIncludePreReleaseChange: (Boolean) -> Unit = {},
+    onAutoCheckUpdateChange: (Boolean) -> Unit = {},
     onDismissUpdateResult: () -> Unit = {},
     apiEnabled: Boolean = false,
     useApiData: Boolean = false,
@@ -301,8 +303,8 @@ fun SettingsTab(
                     Slider(
                         value = overflowCount.toFloat(),
                         onValueChange = { onOverflowCountChange(it.roundToInt()) },
-                        valueRange = 1f..15f,
-                        steps = 13,
+                        valueRange = 1f..30f,
+                        steps = 28,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -448,6 +450,27 @@ fun SettingsTab(
                 Switch(
                     checked = includePreRelease,
                     onCheckedChange = { onIncludePreReleaseChange(it) }
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("启动时自动检查更新", style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        text = "开启后每次启动会自动检查 GitHub Releases",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = autoCheckUpdate,
+                    onCheckedChange = { onAutoCheckUpdateChange(it) }
                 )
             }
 

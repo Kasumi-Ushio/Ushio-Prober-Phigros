@@ -25,7 +25,9 @@ interface SettingsRepository {
 
     // 更新频道
     val includePreRelease: Flow<Boolean>
+    val autoCheckUpdate: Flow<Boolean>
     suspend fun setIncludePreRelease(enabled: Boolean)
+    suspend fun setAutoCheckUpdate(enabled: Boolean)
 
     // 统一查分 API
     val apiEnabled: Flow<Boolean>

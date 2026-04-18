@@ -216,9 +216,12 @@ fun MainScreen(
                 apiRankByUser = state.apiRankByUser,
                 apiRankByPosition = state.apiRankByPosition,
                 apiRksRankResult = state.apiRksRankResult,
+                suggestItems = state.suggestItems,
                 onFetchRankByUser = { viewModel.fetchApiRankByUser() },
                 onFetchRankByPosition = { viewModel.fetchApiRankByPosition(it) },
                 onFetchRksRank = { viewModel.fetchApiRksRankForValue(it) },
+                onNavigateToSongDetail = onNavigateToSongDetail,
+                getIllustrationUrl = { viewModel.getIllustrationUrl(it) },
                 tip = tip,
                 modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
             )

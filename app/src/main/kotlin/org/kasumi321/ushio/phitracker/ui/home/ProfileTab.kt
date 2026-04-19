@@ -1,5 +1,6 @@
 package org.kasumi321.ushio.phitracker.ui.home
 
+import android.graphics.Bitmap
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -41,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -163,125 +165,25 @@ fun ProfileTab(
                 .padding(horizontal = 16.dp)
         ) {
             // ============ 个人信息卡片 ============
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                ),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // 头像
-                    Box(
-                        modifier = Modifier
-                            .size(72.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .clickable { imagePickerLauncher.launch("image/*") },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (avatarUri != null) {
-                            AsyncImage(
-                                model = ImageRequest.Builder(context)
-                                    .data(Uri.parse(avatarUri))
-                                    .crossfade(true)
-                                    .build(),
-                                contentDescription = "头像",
-                                modifier = Modifier
-                                    .size(72.dp)
-                                    .clip(CircleShape),
-                                contentScale = ContentScale.Crop
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "设置头像",
-                                modifier = Modifier.size(28.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
-                    // 信息列
-                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                        // 昵称
-                        Text(
-                            text = nickname.ifBlank { "未登录" },
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        // Data 货币
-                        if (moneyString.isNotBlank()) {
-                            Text(
-                                text = "Data: $moneyString",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        // RKS + 课题模式 Badge (同一行)
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Text(
-                                text = String.format(Locale.US, "%.4f", displayRks),
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            if (challengeModeRank > 0) {
-                                ChallengeBadge(challengeModeRank)
-                            }
-                        }
-                    }
-                }
-            }
+            ProfileHeaderCard(
+                nickname = nickname,
+                displayRks = displayRks,
+                challengeModeRank = challengeModeRank,
+                moneyString = moneyString,
+                avatarUri = avatarUri,
+                onAvatarClick = { imagePickerLauncher.launch("image/*") },
+                modifier = Modifier.fillMaxWidth()
+            )
 
             Spacer(modifier = Modifier.height(12.dp))
 
             // ============ 成绩统计卡片 ============
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                ),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    // 第一行: 四个难度的 Clear 数
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        DifficultyStatItem("EZ", clearCounts["EZ"] ?: 0, DifficultyColors.EZ)
-                        DifficultyStatItem("HD", clearCounts["HD"] ?: 0, DifficultyColors.HD)
-                        DifficultyStatItem("IN", clearCounts["IN"] ?: 0, DifficultyColors.IN)
-                        DifficultyStatItem("AT", clearCounts["AT"] ?: 0, DifficultyColors.AT)
-                    }
-
-                    // 第二行: FC 和 Phi 总数
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        BadgeStatItem("FC", fcCount, FcColor, Color.White)
-                        BadgeStatItem("φ", phiCount, PhiColor, PhiTextColor)
-                    }
-                }
-            }
+            StatsTableCard(
+                clearCounts = clearCounts,
+                fcCount = fcCount,
+                phiCount = phiCount,
+                modifier = Modifier.fillMaxWidth()
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -341,6 +243,150 @@ fun ProfileTab(
             }
 
             Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+}
+
+@Composable
+fun ProfileHeaderCard(
+    nickname: String,
+    displayRks: Float,
+    challengeModeRank: Int,
+    moneyString: String,
+    avatarUri: String? = null,
+    avatarBitmap: Bitmap? = null,
+    onAvatarClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        ),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(72.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .let { base -> if (onAvatarClick != null) base.clickable { onAvatarClick() } else base },
+                contentAlignment = Alignment.Center
+            ) {
+                when {
+                    avatarBitmap != null -> {
+                        androidx.compose.foundation.Image(
+                            bitmap = avatarBitmap.asImageBitmap(),
+                            contentDescription = "头像",
+                            modifier = Modifier
+                                .size(72.dp)
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                    avatarUri != null -> {
+                        AsyncImage(
+                            model = ImageRequest.Builder(context)
+                                .data(Uri.parse(avatarUri))
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = "头像",
+                            modifier = Modifier
+                                .size(72.dp)
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                    else -> {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "设置头像",
+                            modifier = Modifier.size(28.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(
+                    text = nickname.ifBlank { "未登录" },
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                if (moneyString.isNotBlank()) {
+                    Text(
+                        text = "Data: $moneyString",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = String.format(Locale.US, "%.4f", displayRks),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    if (challengeModeRank > 0) {
+                        ChallengeBadge(challengeModeRank)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun StatsTableCard(
+    clearCounts: Map<String, Int>,
+    fcCount: Int,
+    phiCount: Int,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        ),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                DifficultyStatItem("EZ", clearCounts["EZ"] ?: 0, DifficultyColors.EZ)
+                DifficultyStatItem("HD", clearCounts["HD"] ?: 0, DifficultyColors.HD)
+                DifficultyStatItem("IN", clearCounts["IN"] ?: 0, DifficultyColors.IN)
+                DifficultyStatItem("AT", clearCounts["AT"] ?: 0, DifficultyColors.AT)
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                BadgeStatItem("FC", fcCount, FcColor, Color.White)
+                BadgeStatItem("φ", phiCount, PhiColor, PhiTextColor)
+            }
         }
     }
 }

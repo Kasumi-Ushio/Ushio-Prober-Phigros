@@ -1,5 +1,6 @@
 package org.kasumi321.ushio.phitracker.ui.home
 
+import android.graphics.Bitmap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -23,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -60,17 +62,6 @@ fun ScoreCard(
     onSongClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val diffColor = DifficultyColors.forDifficulty(record.difficulty)
-    val isAp = record.accuracy >= 100f
-
-    // 预计算格式化字符串 (避免每帧重复 String.format)
-    val ccText = remember(record.chartConstant) {
-        "${DifficultyColors.labelFor(record.difficulty)} ${String.format("%.1f", record.chartConstant)}"
-    }
-    val scoreText = remember(record.score) { String.format("%,d", record.score) }
-    val accText = remember(record.accuracy) { String.format("%.4f%%", record.accuracy) }
-    val rksText = remember(record.rks) { String.format("%.4f", record.rks) }
-
     val context = LocalContext.current
     val imageRequest = remember(illustrationUrl) {
         illustrationUrl?.let {
@@ -83,9 +74,43 @@ fun ScoreCard(
         }
     }
 
+    ScoreCardContent(
+        record = record,
+        rank = rank,
+        illustrationModel = imageRequest,
+        onClick = { onSongClick(record.songId) },
+        modifier = modifier
+    )
+}
+
+@Composable
+fun ScoreCardContent(
+    record: BestRecord,
+    rank: Int,
+    illustrationBitmap: Bitmap? = null,
+    illustrationModel: Any? = null,
+    rankLabel: String? = null,
+    onClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
+    val diffColor = DifficultyColors.forDifficulty(record.difficulty)
+    val isAp = record.accuracy >= 100f
+
+    // 预计算格式化字符串 (避免每帧重复 String.format)
+    val ccText = remember(record.chartConstant, record.difficulty) {
+        "${DifficultyColors.labelFor(record.difficulty)} ${String.format("%.1f", record.chartConstant)}"
+    }
+    val scoreText = remember(record.score) { String.format("%,d", record.score) }
+    val accText = remember(record.accuracy) { String.format("%.4f%%", record.accuracy) }
+    val rksText = remember(record.rks) { String.format("%.4f", record.rks) }
+    val rankText = remember(rank, rankLabel) { rankLabel ?: "#$rank" }
+
+    val clickableModifier = if (onClick != null) Modifier.clickable { onClick() } else Modifier
+
     Card(
-        modifier = modifier.fillMaxWidth()
-            .clickable { onSongClick(record.songId) },
+        modifier = modifier
+            .fillMaxWidth()
+            .then(clickableModifier),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         )
@@ -102,7 +127,7 @@ fun ScoreCard(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "#$rank",
+                    text = rankText,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = when (rank) {
@@ -116,18 +141,30 @@ fun ScoreCard(
             Spacer(modifier = Modifier.width(8.dp))
 
             // 曲绘缩略图
-            if (imageRequest != null) {
-                AsyncImage(
-                    model = imageRequest,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(RoundedCornerShape(8.dp)),
-                    contentScale = ContentScale.Crop
-                )
-                Spacer(modifier = Modifier.width(10.dp))
+            when {
+                illustrationBitmap != null -> {
+                    androidx.compose.foundation.Image(
+                        bitmap = illustrationBitmap.asImageBitmap(),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                }
+                illustrationModel != null -> {
+                    AsyncImage(
+                        model = illustrationModel,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                }
             }
-
             // 曲名 + 难度标签
             Column(
                 modifier = Modifier.weight(1f)
@@ -354,13 +391,13 @@ fun SuggestScoreCard(
 
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = "ACC $currentAccText → $targetAccText",
+                    text = "$currentAccText → $targetAccText",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.End
                 )
                 Text(
-                    text = "RKS $currentRksText → $potentialRksText",
+                    text = "$currentRksText → $potentialRksText",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,

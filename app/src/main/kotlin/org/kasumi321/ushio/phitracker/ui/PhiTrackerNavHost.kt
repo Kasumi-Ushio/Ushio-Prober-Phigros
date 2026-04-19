@@ -169,6 +169,8 @@ fun PhiTrackerNavHost() {
 
             B30ImageScreen(
                 b30 = state.b30,
+                showB30Overflow = state.showB30Overflow,
+                overflowCount = state.overflowCount,
                 displayRks = state.displayRks,
                 nickname = state.nickname,
                 challengeModeRank = state.challengeModeRank,

@@ -1,5 +1,6 @@
 package org.kasumi321.ushio.phitracker.ui.b30
 
+import android.content.Context
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -55,16 +56,27 @@ import androidx.compose.ui.unit.dp
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
+import androidx.core.graphics.drawable.toBitmap
 import coil.compose.AsyncImage
 import coil.imageLoader
 import coil.request.ImageRequest
+import coil.request.SuccessResult
+import coil.size.Size
 import org.kasumi321.ushio.phitracker.domain.model.BestRecord
 import org.kasumi321.ushio.phitracker.utils.ImageStorageHelper
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun B30ImageScreen(
     b30: List<BestRecord>,
+    showB30Overflow: Boolean,
+    overflowCount: Int,
     displayRks: Float,
     nickname: String,
     challengeModeRank: Int,
@@ -105,22 +117,114 @@ fun B30ImageScreen(
         customBackgroundUri
     ) {
         isGenerating = true
-        bitmap = B30ImageGenerator.generate(
+        val imageLoader = context.imageLoader
+        val dm = context.resources.displayMetrics
+
+        val cardWidthPx = cmToPx(5.2f, dm.xdpi)
+        val cardHeightPx = cmToPx(1.3f, dm.ydpi)
+        val cardGapPx = cmToPx(0.2f, dm.xdpi)
+        val cardVerticalGapPx = cardGapPx
+        val pagePaddingPx = cmToPx(0.25f, dm.xdpi)
+        val renderWidthPx = pagePaddingPx * 2 + cardWidthPx * 3 + cardGapPx * 2
+
+        val renderDensity = dm.density.coerceAtLeast(1f)
+        val cardWidthDp = cardWidthPx / renderDensity
+        val cardHeightDp = cardHeightPx / renderDensity
+        val cardGapDp = cardGapPx / renderDensity
+        val cardVerticalGapDp = cardVerticalGapPx / renderDensity
+
+        // 顶部卡片尺寸：个人信息 5×1.8cm，统计信息 4×1.8cm
+        val profileCardWidthDp = cmToPx(5.0f, dm.xdpi) / renderDensity
+        val profileCardHeightDp = cmToPx(1.8f, dm.ydpi) / renderDensity
+        val statsCardWidthDp = cmToPx(5.0f, dm.xdpi) / renderDensity
+
+        val phiRecords = b30.filter { it.isPhi }.sortedByDescending { it.rks }.take(3)
+        val bestRecords = b30.filterNot { it.isPhi }.sortedByDescending { it.rks }.take(27)
+        val overflowRecords = if (showB30Overflow) {
+            b30.filterNot { it.isPhi }.sortedByDescending { it.rks }.drop(27).take(overflowCount.coerceIn(1, 30))
+        } else {
+            emptyList()
+        }
+
+        val allRecords = (phiRecords + bestRecords + overflowRecords)
+            .distinctBy { "${it.songId}:${it.difficulty}" }
+
+        val illustrationMap = allRecords.associateBy(
+            keySelector = { "${it.songId}:${it.difficulty}" },
+            valueTransform = { record ->
+                loadBitmap(
+                    context = context,
+                    imageLoader = imageLoader,
+                    data = lowIllustrationUrlProvider(record.songId),
+                    width = 256,
+                    height = 256
+                )
+            }
+        )
+
+        val avatarBitmap = loadBitmap(
             context = context,
-            imageLoader = context.imageLoader,
-            b30 = b30,
-            displayRks = displayRks,
+            imageLoader = imageLoader,
+            data = avatarUri,
+            width = 256,
+            height = 256
+        )
+
+        val backgroundData: Any? = customBackgroundUri
+            ?: selectedBackgroundSongId?.let(standardIllustrationUrlProvider)
+            ?: allRecords.firstOrNull()?.let { standardIllustrationUrlProvider(it.songId) }
+
+        val backgroundBitmapRaw = loadBitmap(
+            context = context,
+            imageLoader = imageLoader,
+            data = backgroundData,
+            width = 1200,
+            height = 2200,
+            keepOriginalSize = true
+        )
+        // 预模糊：Stack Blur 算法，radius 越大越模糊
+        val backgroundBitmap = backgroundBitmapRaw?.let {
+            org.kasumi321.ushio.phitracker.utils.stackBlur(it, radius = 50)
+        }
+
+        val exportData = B30ExportData(
             nickname = nickname,
-            challengeModeRank = challengeModeRank,
+            rks = displayRks,
+            challengeLevel = challengeModeRank,
             moneyString = moneyString,
-            clearCounts = clearCounts,
-            fcCount = fcCount,
-            phiCount = phiCount,
-            avatarUri = avatarUri,
-            selectedBackgroundSongId = selectedBackgroundSongId,
-            customBackgroundUri = customBackgroundUri,
-            lowIllustrationUrlProvider = lowIllustrationUrlProvider,
-            standardIllustrationUrlProvider = standardIllustrationUrlProvider
+            dateText = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm:ss", Locale.US)),
+            avatarBitmap = avatarBitmap,
+            statsTable = B30StatsTable(
+                clearCounts = clearCounts,
+                fcCount = fcCount,
+                phiCount = phiCount
+            ),
+            phiRecords = phiRecords.map { record ->
+                ExportCardData(record = record, illustrationBitmap = illustrationMap["${record.songId}:${record.difficulty}"])
+            },
+            bestRecords = bestRecords.map { record ->
+                ExportCardData(record = record, illustrationBitmap = illustrationMap["${record.songId}:${record.difficulty}"])
+            },
+            overflowRecords = overflowRecords.map { record ->
+                ExportCardData(record = record, illustrationBitmap = illustrationMap["${record.songId}:${record.difficulty}"])
+            },
+            backgroundBitmap = backgroundBitmap,
+            profileCardWidthDp = profileCardWidthDp,
+            profileCardHeightDp = profileCardHeightDp,
+            statsCardWidthDp = statsCardWidthDp,
+            cardWidthDp = cardWidthDp,
+            cardHeightDp = cardHeightDp,
+            cardHorizontalGapDp = cardGapDp,
+            cardVerticalGapDp = cardVerticalGapDp
+        )
+
+        bitmap = B30ComposeRenderer(context).render(
+            data = exportData,
+            spec = B30ComposeRenderer.RenderSpec(
+                widthPx = renderWidthPx,
+                density = renderDensity,
+                fontScale = 1f
+            )
         )
         isGenerating = false
     }
@@ -252,6 +356,42 @@ fun B30ImageScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+
+private fun cmToPx(cm: Float, dpi: Float): Int {
+    return (cm * dpi / 2.54f).roundToInt().coerceAtLeast(1)
+}
+
+private suspend fun loadBitmap(
+    context: Context,
+    imageLoader: coil.ImageLoader,
+    data: Any?,
+    width: Int,
+    height: Int,
+    keepOriginalSize: Boolean = false
+): Bitmap? {
+    if (data == null) return null
+    return withContext(Dispatchers.IO) {
+        val requestBuilder = ImageRequest.Builder(context)
+            .data(data)
+            .allowHardware(false)
+        if (keepOriginalSize) {
+            requestBuilder.size(Size.ORIGINAL)
+        } else {
+            requestBuilder.size(Size(width, height))
+        }
+        val request = requestBuilder.build()
+        val result = imageLoader.execute(request)
+        val drawable = (result as? SuccessResult)?.drawable ?: return@withContext null
+        val iw = drawable.intrinsicWidth
+        val ih = drawable.intrinsicHeight
+        if (iw > 0 && ih > 0) {
+            drawable.toBitmap(iw, ih)
+        } else {
+            drawable.toBitmap()
         }
     }
 }
